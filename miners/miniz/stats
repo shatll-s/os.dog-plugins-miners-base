@@ -1,0 +1,83 @@
+#!/bin/bash
+####################################################################################
+###
+### miniZ stats
+### os.dog integration: @osdog
+###
+####################################################################################
+cd `dirname $0`
+
+PROFILE="$1"
+[[ -z "$PROFILE" || ! -f "$PROFILE" ]] && echo "Usage: $0 <profile.json>" && exit 1
+
+API_PORT=$(jq -r '.api_port // empty' "$PROFILE")
+[[ -z "$API_PORT" ]] && exit 1
+
+miner="miniz"
+API_TIMEOUT=5
+
+# miniZ telemetry API — requires POST with getstat method
+stats_template=`curl --connect-timeout 2 --silent --max-time $API_TIMEOUT localhost:$API_PORT -X '{"id":"0", "method":"getstat"}'`
+[[ -z $stats_template ]] && exit 1
+
+miner_online=`echo $stats_template | jq -r '.start_time'`
+miner_ver=`echo $stats_template | jq -r '.version'`
+miner_algo=`echo $stats_template | jq -r '.algorithm'`
+
+# Algo normalization
+[[ $miner_algo == 'equihash150.5.3' ]] && miner_algo='beamhashii'
+
+# Per-GPU data from miniZ response
+miner_busidRaw=(`echo $stats_template | jq -r '.result[].busid' | awk -F ':' '{print $2}'`)
+for ((i=0; i < ${#miner_busidRaw[@]}; i++)); do
+	miner_busid[$i]=`echo ${miner_busidRaw[$i]} | tr '[:upper:]' '[:lower:]'`
+done
+
+miner_temp_json=`echo $stats_template | jq -r '[.result[].temperature]'`
+miner_fan_json=`echo $stats_template | jq -r '[.result[].gpu_fan_speed]'`
+miner_hr_json=`echo $stats_template | jq -r '[.result[].speed_sps]'`
+miner_share_json=`echo $stats_template | jq -r '[.result[].accepted_shares]'`
+miner_badshare_json=`echo $stats_template | jq -r '[.result[].rejected_shares]'`
+
+# Calculate totals
+miner_total_hr=0
+miner_total_share=0
+miner_total_badshare=0
+
+gpuCount=`echo $miner_hr_json | jq '. | length'`
+for ((i=0; i < $gpuCount; i++)); do
+	hr=`echo $miner_hr_json | jq -r ".[$i]"`
+	share=`echo $miner_share_json | jq -r ".[$i]"`
+	badshare=`echo $miner_badshare_json | jq -r ".[$i]"`
+	miner_total_hr=`echo "scale=2; $miner_total_hr + $hr" | bc -l`
+	miner_total_share=`echo "scale=2; $miner_total_share + $share" | bc -l`
+	miner_total_badshare=`echo "scale=2; $miner_total_badshare + $badshare" | bc -l`
+done
+
+# Build busid JSON object (index -> busid)
+busid_json='{}'
+for ((i=0; i < ${#miner_busid[@]}; i++)); do
+	busid_json=$(jq -n --arg data "$busid_json" \
+		--arg key "$i" \
+		--arg value "${miner_busid[$i]}" \
+		'$data | fromjson + { ($key) : ($value)}')
+done
+
+# Build output JSON
+miner_json=$(jq -n "{\"miner\": \"$miner\"}")
+
+[[ $miner_algo && $miner_algo != 'null' ]] && miner_json=`jq ". + {\"algo\": \"$miner_algo\"}" <<< "$miner_json"`
+[[ $miner_online && $miner_online != 'null' ]] && miner_json=`jq ". + {\"online\": \"$miner_online\"}" <<< "$miner_json"`
+[[ $miner_total_hr && $miner_total_hr != 'null' ]] && miner_json=`jq ". + {\"total_hr\": \"$miner_total_hr\"}" <<< "$miner_json"`
+[[ $miner_total_share && $miner_total_share != 'null' ]] && miner_json=`jq ". + {\"total_share\": \"$miner_total_share\"}" <<< "$miner_json"`
+[[ $miner_total_badshare && $miner_total_badshare != 'null' ]] && miner_json=`jq ". + {\"total_badshare\": \"$miner_total_badshare\"}" <<< "$miner_json"`
+[[ $miner_ver && $miner_ver != 'null' ]] && miner_json=`jq ". + {\"ver\": \"$miner_ver\"}" <<< "$miner_json"`
+
+[[ $miner_temp_json ]] && miner_json=`jq ". + {\"temp\": $miner_temp_json}" <<< "$miner_json"`
+[[ $miner_fan_json ]] && miner_json=`jq ". + {\"fan\": $miner_fan_json}" <<< "$miner_json"`
+[[ $miner_hr_json ]] && miner_json=`jq ". + {\"hr\": $miner_hr_json}" <<< "$miner_json"`
+[[ $miner_share_json ]] && miner_json=`jq ". + {\"share\": $miner_share_json}" <<< "$miner_json"`
+[[ $miner_badshare_json ]] && miner_json=`jq ". + {\"badshare\": $miner_badshare_json}" <<< "$miner_json"`
+[[ $busid_json != '{}' ]] && miner_json=`jq ". + {\"busid\": $busid_json}" <<< "$miner_json"`
+
+echo $miner_json | jq -c '.'

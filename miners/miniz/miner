@@ -1,0 +1,33 @@
+#!/bin/bash
+####################################################################################
+###
+### miniZ
+### os.dog integration: @osdog
+###
+####################################################################################
+. /dog/colors
+cd `dirname $0`
+
+PROFILE="$1"
+[[ -z "$PROFILE" || ! -f "$PROFILE" ]] && echo -e "${RED}Usage: $0 <profile.json>${WHITE}" && exit 1
+
+ALGO=$(jq -r '.algo // empty' "$PROFILE")
+PASS=$(jq -r '.pass // empty' "$PROFILE")
+POOL=$(jq -r '.pool // empty' "$PROFILE")
+TEMPLATE=$(jq -r '.template // empty' "$PROFILE")
+API_PORT=$(jq -r '.api_port // empty' "$PROFILE")
+ADDITION=$(jq -r '.addition // empty' "$PROFILE")
+
+LOG="/dog/log/miniz.log"
+
+# Build command
+batch="./miniZ"
+[[ -n "$ALGO" ]] && batch+=" --par=$ALGO"
+[[ -n "$PASS" ]] && batch+=" -p $PASS"
+[[ -n "$POOL" && -n "$TEMPLATE" ]] && batch+=" --url=$TEMPLATE@$POOL"
+batch+=" --telemetry=$API_PORT --log-file=$LOG"
+[[ -n "$ADDITION" ]] && batch+=" $ADDITION"
+
+echo -e "${GREEN}> Starting miniZ: $batch${WHITE}"
+
+unbuffer $batch 2>&1 | tee $LOG

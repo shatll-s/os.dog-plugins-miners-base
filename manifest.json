@@ -1,20 +1,26 @@
 {
-  "miniz": {
-    "name": "miniZ",
-    "latest": "2.4d",
-    "algos": [
-      { "g": "equihash96_5", "i": "96,5" },
-      { "g": "equihash125_4", "i": "125,4" },
-      { "g": "equihash144_5", "i": "144,5" },
-      { "g": "equihash150_5", "i": "150,5" },
-      { "g": "beamhash2", "i": "150,5,3" },
-      { "g": "beamhash3", "i": "144,5s" },
-      { "g": "equihash192_7", "i": "192,7" },
-      { "g": "equihash210_9", "i": "210,9" },
-      { "g": "ethash", "i": "" }
-    ],
-    "versions": {
-      "2.4d": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/miniz/miniz-2.4d.tar.gz"
+  "package": "os.dog-plugins-miners-base",
+  "description": "Base miners",
+  "label": "base",
+  "miners": [
+    {
+      "id": "miniz",
+      "name": "miniZ",
+      "latest": "2.5e3",
+      "algos": [
+        { "g": "equihash96_5", "i": "96,5" },
+        { "g": "equihash125_4", "i": "125,4" },
+        { "g": "equihash144_5", "i": "144,5" },
+        { "g": "equihash150_5", "i": "150,5" },
+        { "g": "beamhash2", "i": "150,5,3" },
+        { "g": "beamhash3", "i": "144,5s" },
+        { "g": "equihash192_7", "i": "192,7" },
+        { "g": "equihash210_9", "i": "210,9" },
+        { "g": "ethash", "i": "" }
+      ],
+      "versions": {
+        "2.5e3": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/miniz-2.5e3.tar.gz"
+      }
     }
-  }
+  ]
 }
