@@ -122,7 +122,7 @@ Add an entry to the `miners` array:
       "name": "Display Name",
       "latest": "<version>",
       "algos": [
-        { "g": "<generic_algo_name>", "i": "<miner_specific_param>" }
+        { "g": "<system_algo_name>", "i": "<miner_algo_param>" }
       ],
       "versions": {
         "<version>": "https://raw.githubusercontent.com/.../releases/<miner_id>-<version>.tar.gz"
@@ -132,11 +132,15 @@ Add an entry to the `miners` array:
 }
 ```
 
+Manifest fields:
+- `algos` — list of supported algorithms for the **latest** version. `g` is the algorithm name in the os.dog system, `i` is the parameter passed to this specific miner implementation
+- `versions` — map of version → archive URL (latest version first)
+
 The same manifest structure is used across all plugin packages (`os.dog-plugins-miners-base`, `os.dog-plugins-miners-extra`, etc.) — only `package` and `miners` content differ.
 
 ## Slot profile
 
-Both `miner` and `stats` receive a profile path as `$1`. The profile is a JSON file at `/run/dog/profiles/<slot>.json`:
+Both `miner` and `stats` receive a profile path as `$1`:
 
 ```json
 {
