@@ -1,0 +1,33 @@
+#!/bin/bash
+####################################################################################
+###
+### lolMiner
+### os.dog integration: @osdog
+###
+####################################################################################
+cd `dirname $0`
+
+PROFILE="$1"
+[[ -z "$PROFILE" || ! -f "$PROFILE" ]] && echo -e "${RED}Usage: $0 <profile.json>${WHITE}" && exit 1
+
+ALGO=$(jq -r '.algo // empty' "$PROFILE")
+PASS=$(jq -r '.pass // empty' "$PROFILE")
+POOL=$(jq -r '.pool // empty' "$PROFILE")
+TEMPLATE=$(jq -r '.template // empty' "$PROFILE")
+API_PORT=$(jq -r '.api_port // empty' "$PROFILE")
+ADDITION=$(jq -r '.addition // empty' "$PROFILE")
+
+LOG="/var/log/osdog/miners/lolminer.log"
+
+# Build command
+batch="./lolMiner"
+[[ -n "$ALGO" ]] && batch+=" --algo $ALGO"
+[[ -n "$POOL" ]] && batch+=" --pool $POOL"
+[[ -n "$TEMPLATE" ]] && batch+=" --user $TEMPLATE"
+[[ -n "$PASS" ]] && batch+=" --pass $PASS"
+batch+=" --apiport $API_PORT"
+[[ -n "$ADDITION" ]] && batch+=" $ADDITION"
+
+echo "> Starting lolMiner: $batch"
+
+unbuffer $batch 2>&1 | tee $LOG

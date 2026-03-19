@@ -15,11 +15,33 @@
         { "g": "beamhash2", "i": "150,5,3" },
         { "g": "beamhash3", "i": "144,5s" },
         { "g": "equihash192_7", "i": "192,7" },
-        { "g": "equihash210_9", "i": "210,9" },
-        { "g": "ethash", "i": "" }
+        { "g": "equihash210_9", "i": "210,9" }
       ],
       "versions": {
         "2.5e3": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/miniz-2.5e3-1.tar.gz"
+      }
+    },
+    {
+      "id": "lolminer",
+      "name": "lolMiner",
+      "latest": "1.98a",
+      "algos": [
+        { "g": "ethash", "i": "ETHASH" },
+        { "g": "etchash", "i": "ETCHASH" },
+        { "g": "autolykos2", "i": "AUTOLYKOS2" },
+        { "g": "beamhash3", "i": "BEAM-III" },
+        { "g": "equihash144_5", "i": "EQUI144_5" },
+        { "g": "flux", "i": "FLUX" },
+        { "g": "octopus", "i": "OCTOPUS" },
+        { "g": "fishhash", "i": "FISHHASH" },
+        { "g": "karlsenv2", "i": "KARLSENV2" },
+        { "g": "nexa", "i": "NEXA" },
+        { "g": "radiant", "i": "RADIANT" },
+        { "g": "sha3x", "i": "SHA3X" },
+        { "g": "aleph", "i": "ALEPH" }
+      ],
+      "versions": {
+        "1.98a": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/lolminer-1.98a.tar.gz"
       }
     }
   ]

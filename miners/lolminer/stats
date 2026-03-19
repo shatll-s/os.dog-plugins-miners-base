@@ -1,0 +1,73 @@
+#!/bin/bash
+####################################################################################
+###
+### lolMiner stats
+### os.dog integration: @osdog
+###
+####################################################################################
+cd `dirname $0`
+
+PROFILE="$1"
+[[ -z "$PROFILE" || ! -f "$PROFILE" ]] && echo "Usage: $0 <profile.json>" && exit 1
+
+API_PORT=$(jq -r '.api_port // empty' "$PROFILE")
+[[ -z "$API_PORT" ]] && exit 1
+
+miner="lolminer"
+API_TIMEOUT=5
+
+# lolMiner API — HTTP GET /summary
+stats_template=$(curl --connect-timeout 2 --silent --max-time $API_TIMEOUT "http://localhost:$API_PORT/summary")
+[[ -z "$stats_template" ]] && exit 1
+
+miner_ver=$(echo "$stats_template" | jq -r '.Software // empty')
+miner_algo=$(echo "$stats_template" | jq -r '.Mining.Algorithm // empty')
+miner_uptime=$(echo "$stats_template" | jq -r '.Session.Uptime // empty')
+
+# Calculate online timestamp from uptime
+miner_online=""
+if [[ -n "$miner_uptime" && "$miner_uptime" != "null" ]]; then
+	miner_online=$(($(date +%s) - miner_uptime))
+fi
+
+# Session shares
+miner_accepted=$(echo "$stats_template" | jq -r '.Session.Accepted // 0')
+miner_submitted=$(echo "$stats_template" | jq -r '.Session.Submitted // 0')
+miner_rejected=$((miner_submitted - miner_accepted))
+[[ $miner_rejected -lt 0 ]] && miner_rejected=0
+
+# Per-GPU data
+miner_hr_json=$(echo "$stats_template" | jq '[.GPUs[].Performance]')
+
+# Bus IDs — extract bus number from PCIE address (e.g., "0a:00.0" -> "0a")
+miner_busidRaw=($(echo "$stats_template" | jq -r '.GPUs[].PCIE_Address' | awk -F ':' '{print $1}'))
+for ((i=0; i < ${#miner_busidRaw[@]}; i++)); do
+	miner_busid[$i]=$(echo "${miner_busidRaw[$i]}" | tr '[:upper:]' '[:lower:]')
+done
+
+# Total hashrate
+miner_total_hr=$(echo "$stats_template" | jq -r '.Session.Performance_Summary // 0')
+
+# Build busid JSON object (index -> busid)
+busid_json='{}'
+for ((i=0; i < ${#miner_busid[@]}; i++)); do
+	busid_json=$(jq -n --arg data "$busid_json" \
+		--arg key "$i" \
+		--arg value "${miner_busid[$i]}" \
+		'$data | fromjson + { ($key) : ($value)}')
+done
+
+# Build output JSON
+miner_json=$(jq -n "{\"miner\": \"$miner\"}")
+
+[[ $miner_algo && $miner_algo != 'null' ]] && miner_json=$(jq ". + {\"algo\": \"$miner_algo\"}" <<< "$miner_json")
+[[ $miner_online ]] && miner_json=$(jq ". + {\"online\": $miner_online}" <<< "$miner_json")
+[[ $miner_total_hr ]] && miner_json=$(jq ". + {\"total_hr\": \"$miner_total_hr\"}" <<< "$miner_json")
+[[ $miner_accepted ]] && miner_json=$(jq ". + {\"total_share\": \"$miner_accepted\"}" <<< "$miner_json")
+[[ $miner_rejected ]] && miner_json=$(jq ". + {\"total_badshare\": \"$miner_rejected\"}" <<< "$miner_json")
+[[ $miner_ver && $miner_ver != 'null' ]] && miner_json=$(jq ". + {\"ver\": \"$miner_ver\"}" <<< "$miner_json")
+
+[[ $miner_hr_json ]] && miner_json=$(jq ". + {\"hr\": $miner_hr_json}" <<< "$miner_json")
+[[ $busid_json != '{}' ]] && miner_json=$(jq ". + {\"busid\": $busid_json}" <<< "$miner_json")
+
+echo "$miner_json" | jq -c '.'
