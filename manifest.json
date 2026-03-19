@@ -41,7 +41,8 @@
         { "g": "aleph", "i": "ALEPH" }
       ],
       "versions": {
-        "1.98a": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/lolminer-1.98a.tar.gz"
+        "1.98a": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/lolminer-1.98a.tar.gz",
+        "1.66": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/lolminer-1.66.tar.gz"
       }
     }
   ]
