@@ -7,6 +7,13 @@
 ####################################################################################
 cd `dirname $0`
 
+# SRBMiner API (GET /): { miner_version, mining_time,
+#   gpu_devices: [{ bus_id, temperature, fan_speed_percent }],
+#   algorithms: [{ name, shares: { accepted, rejected },
+#     hashrate: { gpu: { gpu0:.., total:.. }, 1min, 1hr },
+#     gpu_accepted_shares: { gpu0:.., gpu1:.. },
+#     gpu_rejected_shares: { gpu0:.., gpu1:.. } }] }
+
 PROFILE="$1"
 [[ -z "$PROFILE" || ! -f "$PROFILE" ]] && echo "Usage: $0 <profile.json>" && exit 1
 
@@ -16,7 +23,6 @@ API_PORT=$(jq -r '.api_port // empty' "$PROFILE")
 miner="srbminer"
 API_TIMEOUT=5
 
-# SRBMiner-Multi API — HTTP GET on root
 stats_template=$(curl --connect-timeout 2 --silent --max-time $API_TIMEOUT "http://localhost:$API_PORT")
 [[ -z "$stats_template" ]] && exit 1
 
@@ -30,16 +36,17 @@ if [[ -n "$miner_uptime" && "$miner_uptime" != "null" ]]; then
 	miner_online=$(($(date +%s) - miner_uptime))
 fi
 
-# Session shares
+# Total shares
 miner_accepted=$(echo "$stats_template" | jq -r '.algorithms[0].shares.accepted // 0')
 miner_rejected=$(echo "$stats_template" | jq -r '.algorithms[0].shares.rejected // 0')
 
-# Per-GPU hashrates — .hashrate.gpu is an object with numeric keys + "total" key, filter numeric only
-gpu_count=$(echo "$stats_template" | jq '.gpu_devices | length')
-miner_hr_json=$(echo "$stats_template" | jq "[.algorithms[0].hashrate.gpu // {} | to_entries[] | select(.key | test(\"^[0-9]+$\")) | .value] | .[:$gpu_count]")
+# Per-GPU hashrates — .hashrate.gpu is { gpu0: N, gpu1: N, ..., total: N }
+miner_hr_json=$(echo "$stats_template" | jq '[.algorithms[0].hashrate.gpu // {} | to_entries[] | select(.key != "total") | .value]')
+miner_total_hr=$(echo "$stats_template" | jq -r '.algorithms[0].hashrate.gpu.total // .algorithms[0].hashrate["1min"] // 0')
 
-# Total hashrate — use .hashrate.gpu.total, fallback to summing per-GPU rates
-miner_total_hr=$(echo "$stats_template" | jq -r '.algorithms[0].hashrate.gpu.total // .algorithms[0].hashrate.now // 0')
+# Per-GPU shares
+miner_share_json=$(echo "$stats_template" | jq '[.algorithms[0].gpu_accepted_shares // {} | to_entries[] | .value]')
+miner_badshare_json=$(echo "$stats_template" | jq '[.algorithms[0].gpu_rejected_shares // {} | to_entries[] | .value]')
 
 # Bus IDs from gpu_devices
 miner_busidRaw=($(echo "$stats_template" | jq -r '.gpu_devices[]?.bus_id // empty'))
@@ -67,6 +74,8 @@ miner_json=$(jq -n "{\"miner\": \"$miner\"}")
 [[ $miner_ver && $miner_ver != 'null' ]] && miner_json=$(jq ". + {\"ver\": \"$miner_ver\"}" <<< "$miner_json")
 
 [[ $miner_hr_json && $miner_hr_json != '[]' ]] && miner_json=$(jq ". + {\"hr\": $miner_hr_json}" <<< "$miner_json")
+[[ $miner_share_json && $miner_share_json != '[]' ]] && miner_json=$(jq ". + {\"share\": $miner_share_json}" <<< "$miner_json")
+[[ $miner_badshare_json && $miner_badshare_json != '[]' ]] && miner_json=$(jq ". + {\"badshare\": $miner_badshare_json}" <<< "$miner_json")
 [[ $busid_json != '{}' ]] && miner_json=$(jq ". + {\"busid\": $busid_json}" <<< "$miner_json")
 
 echo "$miner_json" | jq -c '.'
