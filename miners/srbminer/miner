@@ -1,0 +1,33 @@
+#!/bin/bash
+####################################################################################
+###
+### SRBMiner-Multi
+### os.dog integration: @osdog
+###
+####################################################################################
+cd `dirname $0`
+
+PROFILE="$1"
+[[ -z "$PROFILE" || ! -f "$PROFILE" ]] && echo -e "${RED}Usage: $0 <profile.json>${WHITE}" && exit 1
+
+ALGO=$(jq -r '.algo // empty' "$PROFILE")
+PASS=$(jq -r '.pass // empty' "$PROFILE")
+POOL=$(jq -r '.pool // empty' "$PROFILE")
+TEMPLATE=$(jq -r '.template // empty' "$PROFILE")
+API_PORT=$(jq -r '.api_port // empty' "$PROFILE")
+ADDITION=$(jq -r '.addition // empty' "$PROFILE")
+
+LOG="/var/log/osdog/miners/srbminer.log"
+
+# Build command
+batch="./SRBMiner-MULTI"
+[[ -n "$ALGO" ]] && batch+=" --algorithm $ALGO"
+[[ -n "$POOL" ]] && batch+=" --pool $POOL"
+[[ -n "$TEMPLATE" ]] && batch+=" --wallet $TEMPLATE"
+[[ -n "$PASS" ]] && batch+=" --password $PASS"
+batch+=" --api-enable --api-port $API_PORT"
+[[ -n "$ADDITION" ]] && batch+=" $ADDITION"
+
+echo "> Starting SRBMiner-Multi: $batch"
+
+unbuffer $batch 2>&1 | tee $LOG

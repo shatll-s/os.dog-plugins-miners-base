@@ -44,6 +44,29 @@
         "1.98a": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/lolminer-1.98a.tar.gz",
         "1.66": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/lolminer-1.66.tar.gz"
       }
+    },
+    {
+      "id": "srbminer",
+      "name": "SRBMiner-Multi",
+      "latest": "3.2.3",
+      "algos": [
+        { "g": "ethash", "i": "ethash" },
+        { "g": "etchash", "i": "etchash" },
+        { "g": "autolykos2", "i": "autolykos2" },
+        { "g": "kawpow", "i": "kawpow" },
+        { "g": "fishhash", "i": "fishhash" },
+        { "g": "karlsenhashv2", "i": "karlsenhashv2" },
+        { "g": "heavyhash", "i": "heavyhash" },
+        { "g": "sha3x", "i": "sha3x" },
+        { "g": "blake3_decred", "i": "blake3_decred" },
+        { "g": "verthash", "i": "verthash" },
+        { "g": "firopow", "i": "firopow" },
+        { "g": "evrprogpow", "i": "evrprogpow" },
+        { "g": "randomx", "i": "randomx" }
+      ],
+      "versions": {
+        "3.2.3": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.2.3.tar.gz"
+      }
     }
   ]
 }
