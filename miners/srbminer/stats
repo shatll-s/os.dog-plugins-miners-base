@@ -34,11 +34,12 @@ fi
 miner_accepted=$(echo "$stats_template" | jq -r '.algorithms[0].shares.accepted // 0')
 miner_rejected=$(echo "$stats_template" | jq -r '.algorithms[0].shares.rejected // 0')
 
-# Per-GPU hashrates
-miner_hr_json=$(echo "$stats_template" | jq '[.algorithms[0].hashrate.gpu // [] | .[]?]')
+# Per-GPU hashrates — .hashrate.gpu is an object with numeric keys + "total" key, filter numeric only
+gpu_count=$(echo "$stats_template" | jq '.gpu_devices | length')
+miner_hr_json=$(echo "$stats_template" | jq "[.algorithms[0].hashrate.gpu // {} | to_entries[] | select(.key | test(\"^[0-9]+$\")) | .value] | .[:$gpu_count]")
 
-# Total hashrate
-miner_total_hr=$(echo "$stats_template" | jq -r '.algorithms[0].hashrate.now // 0')
+# Total hashrate — use .hashrate.gpu.total, fallback to summing per-GPU rates
+miner_total_hr=$(echo "$stats_template" | jq -r '.algorithms[0].hashrate.gpu.total // .algorithms[0].hashrate.now // 0')
 
 # Bus IDs from gpu_devices
 miner_busidRaw=($(echo "$stats_template" | jq -r '.gpu_devices[]?.bus_id // empty'))
