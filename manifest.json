@@ -48,7 +48,7 @@
     {
       "id": "srbminer",
       "name": "SRBMiner-Multi",
-      "latest": "3.3.5",
+      "latest": "3.3.6",
       "algos": [
         { "g": "ethash", "i": "ethash" },
         { "g": "etchash", "i": "etchash" },
@@ -76,6 +76,7 @@
         { "g": "cryptonight_turtle", "i": "cryptonight_turtle" },
         { "g": "argon2id_exfer", "i": "argon2id_exfer" },
         { "g": "pearlhash", "i": "pearlhash" },
+        { "g": "oggpow", "i": "oggpow" },
         { "g": "argon2d_16000", "i": "argon2d_16000" },
         { "g": "argon2d_dynamic", "i": "argon2d_dynamic" },
         { "g": "curvehash", "i": "curvehash" },
@@ -89,9 +90,9 @@
         { "g": "randomx", "i": "randomx" }
       ],
       "versions": {
+        "3.3.6": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.3.6.tar.gz",
         "3.3.5": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.3.5.tar.gz",
-        "3.2.9": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.2.9.tar.gz",
-        "3.2.4": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.2.4.tar.gz"
+        "3.2.9": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.2.9.tar.gz"
       }
     }
   ]
