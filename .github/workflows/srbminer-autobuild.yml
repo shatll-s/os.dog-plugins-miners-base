@@ -1,0 +1,131 @@
+name: SRBMiner auto-build
+
+# Polls doktor83/SRBMiner-Multi for new releases and, when one appears,
+# rebuilds our release archive + updates manifest.json and commits to main.
+# A real webhook isn't possible (we don't own the upstream repo), so this
+# polls on a schedule. Change the cron below to poll more/less often.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'       # every 10 min (GitHub runs schedules best-effort; may slip under load)
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Force a specific SRBMiner version (e.g. 3.3.6). Blank = latest upstream.'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Build everything but do NOT commit/push (for testing).'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: srbminer-autobuild
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve target & current version
+        id: ver
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORCE: ${{ github.event.inputs.version }}
+        run: |
+          set -euo pipefail
+          if [ -n "${FORCE:-}" ]; then
+            TARGET="$FORCE"
+          else
+            TARGET=$(gh api repos/doktor83/SRBMiner-Multi/releases/latest --jq '.tag_name')
+          fi
+          CURRENT=$(jq -r '.miners[]|select(.id=="srbminer")|.latest' manifest.json)
+          echo "target=$TARGET"     >> "$GITHUB_OUTPUT"
+          echo "up_to_date=$([ "$TARGET" = "$CURRENT" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "SRBMiner: current=$CURRENT target=$TARGET"
+
+      - name: Best-effort runtime libs (for --list-algorithms)
+        if: steps.ver.outputs.up_to_date == 'false'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ocl-icd-libopencl1 libgomp1 libcurl4 || true
+
+      - name: Download, verify & extract
+        if: steps.ver.outputs.up_to_date == 'false'
+        id: dl
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET: ${{ steps.ver.outputs.target }}
+        run: |
+          set -euo pipefail
+          DASH="${TARGET//./-}"
+          TARBALL="SRBMiner-Multi-${DASH}-Linux.tar.gz"
+          URL="https://github.com/doktor83/SRBMiner-Multi/releases/download/${TARGET}/${TARBALL}"
+          echo "Downloading $URL"
+          curl -fsSL -o "$TARBALL" "$URL"
+          MD5=$(gh api repos/doktor83/SRBMiner-Multi/releases/tags/"$TARGET" --jq '.body' \
+                | grep -oiE "[a-f0-9]{32} \*${TARBALL}" | awk '{print $1}' | head -1)
+          if [ -z "$MD5" ]; then echo "::error::no MD5 for $TARBALL in release body"; exit 1; fi
+          echo "$MD5  $TARBALL" | md5sum -c -
+          mkdir -p _srb && tar -xzf "$TARBALL" -C _srb
+          BIN=$(find _srb -type f -name SRBMiner-MULTI | head -1)
+          if [ -z "$BIN" ]; then echo "::error::SRBMiner-MULTI not found in archive"; exit 1; fi
+          chmod +x "$BIN"
+          echo "bin=$BIN" >> "$GITHUB_OUTPUT"
+
+      - name: List algorithms
+        if: steps.ver.outputs.up_to_date == 'false'
+        run: |
+          set -uo pipefail
+          # The binary only prints the algo list to a TTY, so fake one with script(1).
+          script -qec "${{ steps.dl.outputs.bin }} --list-algorithms" algos.raw >/dev/null 2>&1 || true
+          echo "Parsed algo rows: $(grep -cE '\]\s+\S+\s*$' algos.raw || echo 0)"
+
+      - name: Stage binary & update manifest
+        if: steps.ver.outputs.up_to_date == 'false'
+        env:
+          TARGET: ${{ steps.ver.outputs.target }}
+        run: |
+          set -euo pipefail
+          cp "${{ steps.dl.outputs.bin }}" miners/srbminer/SRBMiner-MULTI
+          chmod +x miners/srbminer/SRBMiner-MULTI
+          python3 .github/scripts/update_manifest.py \
+            --manifest manifest.json --version "$TARGET" --algolist algos.raw
+          jq empty manifest.json
+
+      - name: Build release archive
+        if: steps.ver.outputs.up_to_date == 'false'
+        env:
+          TARGET: ${{ steps.ver.outputs.target }}
+        run: |
+          set -euo pipefail
+          cd miners/srbminer
+          md5sum ./miner ./stats ./SRBMiner-MULTI > files.md5
+          tar -czf "../../releases/srbminer-${TARGET}.tar.gz" \
+            --transform 's,^,./,' miner stats SRBMiner-MULTI files.md5
+          rm files.md5
+          echo "Archive contents:"; tar -tzf "../../releases/srbminer-${TARGET}.tar.gz"
+
+      - name: Commit & push
+        if: steps.ver.outputs.up_to_date == 'false'
+        env:
+          TARGET: ${{ steps.ver.outputs.target }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          rm -rf _srb algos.raw SRBMiner-Multi-*-Linux.tar.gz
+          git add manifest.json miners/srbminer/SRBMiner-MULTI "releases/srbminer-${TARGET}.tar.gz"
+          if git diff --cached --quiet; then echo "Nothing to commit"; exit 0; fi
+          if [ "${DRY_RUN:-false}" = "true" ]; then
+            echo "DRY RUN — would commit SRBMiner-Multi ${TARGET}. Staged diff:"
+            git diff --cached --stat
+            git -c core.pager=cat diff --cached -- manifest.json
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Auto-build SRBMiner-Multi ${TARGET}"
+          git push
