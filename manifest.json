@@ -48,7 +48,7 @@
     {
       "id": "srbminer",
       "name": "SRBMiner-Multi",
-      "latest": "3.4.8",
+      "latest": "3.4.9",
       "algos": [
         { "g": "ethash", "i": "ethash" },
         { "g": "etchash", "i": "etchash" },
@@ -63,7 +63,6 @@
         { "g": "firopow", "i": "firopow" },
         { "g": "evrprogpow", "i": "evrprogpow" },
         { "g": "xelishashv3", "i": "xelishashv3" },
-        { "g": "sha256mem", "i": "sha256mem" },
         { "g": "phihash", "i": "phihash" },
         { "g": "qhash", "i": "qhash" },
         { "g": "walahash", "i": "walahash" },
@@ -87,13 +86,12 @@
         { "g": "yescryptr32", "i": "yescryptr32" },
         { "g": "yespower", "i": "yespower" },
         { "g": "yespowertide", "i": "yespowertide" },
-        { "g": "randomx", "i": "randomx" },
-        { "g": "btx", "i": "btx" }
+        { "g": "randomx", "i": "randomx" }
       ],
       "versions": {
+        "3.4.9": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.4.9.tar.gz",
         "3.4.8": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.4.8.tar.gz",
-        "3.4.7": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.4.7.tar.gz",
-        "3.4.6": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.4.6.tar.gz"
+        "3.4.7": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.4.7.tar.gz"
       }
     }
   ]
