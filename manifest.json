@@ -48,7 +48,7 @@
     {
       "id": "srbminer",
       "name": "SRBMiner-Multi",
-      "latest": "3.5.1",
+      "latest": "3.5.2",
       "algos": [
         { "g": "ethash", "i": "ethash" },
         { "g": "etchash", "i": "etchash" },
@@ -89,9 +89,9 @@
         { "g": "randomx", "i": "randomx" }
       ],
       "versions": {
+        "3.5.2": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.5.2.tar.gz",
         "3.5.1": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.5.1.tar.gz",
-        "3.5.0": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.5.0.tar.gz",
-        "3.4.9": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.4.9.tar.gz"
+        "3.5.0": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.5.0.tar.gz"
       }
     }
   ]
