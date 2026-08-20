@@ -48,7 +48,7 @@
     {
       "id": "srbminer",
       "name": "SRBMiner-Multi",
-      "latest": "3.5.7",
+      "latest": "3.5.8",
       "algos": [
         { "g": "ethash", "i": "ethash" },
         { "g": "etchash", "i": "etchash" },
@@ -56,7 +56,6 @@
         { "g": "kawpow", "i": "kawpow" },
         { "g": "meowpow", "i": "meowpow" },
         { "g": "fishhash", "i": "fishhash" },
-        { "g": "karlsenhashv2", "i": "karlsenhashv2" },
         { "g": "heavyhash", "i": "heavyhash" },
         { "g": "blake3_decred", "i": "blake3_decred" },
         { "g": "verthash", "i": "verthash" },
@@ -65,11 +64,8 @@
         { "g": "xelishashv3", "i": "xelishashv3" },
         { "g": "phihash", "i": "phihash" },
         { "g": "qhash", "i": "qhash" },
-        { "g": "walahash", "i": "walahash" },
         { "g": "xhash", "i": "xhash" },
         { "g": "progpow_epic", "i": "progpow_epic" },
-        { "g": "progpow_sero", "i": "progpow_sero" },
-        { "g": "progpow_telestai", "i": "progpow_telestai" },
         { "g": "progpow_zano", "i": "progpow_zano" },
         { "g": "cryptonight_gpu", "i": "cryptonight_gpu" },
         { "g": "cryptonight_turtle", "i": "cryptonight_turtle" },
@@ -88,12 +84,13 @@
         { "g": "yespowertide", "i": "yespowertide" },
         { "g": "randomx", "i": "randomx" },
         { "g": "sha3t", "i": "sha3t" },
-        { "g": "blake3_an", "i": "blake3_an" }
+        { "g": "blake3_an", "i": "blake3_an" },
+        { "g": "sha256d_csd", "i": "sha256d_csd" }
       ],
       "versions": {
+        "3.5.8": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.5.8.tar.gz",
         "3.5.7": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.5.7.tar.gz",
-        "3.5.6": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.5.6.tar.gz",
-        "3.5.5": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.5.5.tar.gz"
+        "3.5.6": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.5.6.tar.gz"
       }
     }
   ]
