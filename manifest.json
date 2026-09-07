@@ -48,7 +48,7 @@
     {
       "id": "srbminer",
       "name": "SRBMiner-Multi",
-      "latest": "3.6.2",
+      "latest": "3.6.3",
       "algos": [
         { "g": "ethash", "i": "ethash" },
         { "g": "etchash", "i": "etchash" },
@@ -85,12 +85,13 @@
         { "g": "randomx", "i": "randomx" },
         { "g": "sha3t", "i": "sha3t" },
         { "g": "blake3_an", "i": "blake3_an" },
-        { "g": "sha256d_csd", "i": "sha256d_csd" }
+        { "g": "sha256d_csd", "i": "sha256d_csd" },
+        { "g": "noid", "i": "noid" }
       ],
       "versions": {
+        "3.6.3": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.6.3.tar.gz",
         "3.6.2": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.6.2.tar.gz",
-        "3.6.1": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.6.1.tar.gz",
-        "3.6.0": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.6.0.tar.gz"
+        "3.6.1": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.6.1.tar.gz"
       }
     }
   ]
