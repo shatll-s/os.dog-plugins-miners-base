@@ -1,0 +1,22 @@
+#!/bin/bash
+set -euo pipefail
+
+PROFILE="${1:-}"
+[[ -n "$PROFILE" && -f "$PROFILE" ]] || { echo "Usage: $0 <profile.json>"; exit 1; }
+PROFILE=$(realpath "$PROFILE")
+cd "$(dirname "$0")"
+ALGO=$(jq -r '.algo // empty' "$PROFILE")
+POOL=$(jq -r '.pool // empty' "$PROFILE")
+TEMPLATE=$(jq -r '.template // .wallet // empty' "$PROFILE")
+PASS=$(jq -r '.pass // empty' "$PROFILE")
+API_PORT=$(jq -r '.api_port // empty' "$PROFILE")
+ADDITION=$(jq -r '.addition // empty' "$PROFILE")
+[[ -n "$ALGO" && -n "$POOL" && -n "$TEMPLATE" && "$API_PORT" =~ ^[0-9]+$ ]] || { echo "algo, pool, template and api_port are required"; exit 1; }
+
+mkdir -p /var/log/osdog/miners
+args=(-a "$ALGO" -o "$POOL" -w "$TEMPLATE" --api-host 127.0.0.1 --api-port "$API_PORT" --log-file /var/log/osdog/miners/onezerominer.log)
+[[ -z "$PASS" ]] || args+=(-p "$PASS")
+extra=()
+read -r -a extra <<< "$ADDITION"
+echo "> Starting OneZeroMiner"
+exec ./onezerominer "${args[@]}" "${extra[@]}"

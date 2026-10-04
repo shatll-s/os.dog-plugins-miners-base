@@ -23,7 +23,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: srbminer-autobuild
+  group: base-miners-autobuild
   cancel-in-progress: false
 
 jobs:
@@ -51,7 +51,10 @@ jobs:
 
       - name: Best-effort runtime libs (for --list-algorithms)
         if: steps.ver.outputs.up_to_date == 'false'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ocl-icd-libopencl1 libgomp1 libcurl4 || true
+        run: |
+          if sudo apt-get update -qq; then
+            sudo apt-get install -y -qq ocl-icd-libopencl1 libgomp1 libcurl4 || true
+          fi
 
       - name: Download, verify & extract
         if: steps.ver.outputs.up_to_date == 'false'

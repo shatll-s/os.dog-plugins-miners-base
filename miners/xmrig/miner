@@ -1,0 +1,25 @@
+#!/bin/bash
+set -euo pipefail
+
+PROFILE="${1:-}"
+[[ -n "$PROFILE" && -f "$PROFILE" ]] || { echo "Usage: $0 <profile.json>"; exit 1; }
+PROFILE=$(realpath "$PROFILE")
+cd "$(dirname "$0")"
+
+ALGO=$(jq -r '.algo // empty' "$PROFILE")
+POOL=$(jq -r '.pool // empty' "$PROFILE")
+TEMPLATE=$(jq -r '.template // .wallet // empty' "$PROFILE")
+PASS=$(jq -r '.pass // empty' "$PROFILE")
+API_PORT=$(jq -r '.api_port // empty' "$PROFILE")
+ADDITION=$(jq -r '.addition // empty' "$PROFILE")
+[[ -n "$POOL" && -n "$TEMPLATE" && "$API_PORT" =~ ^[0-9]+$ ]] || { echo "pool, template and api_port are required"; exit 1; }
+
+mkdir -p /var/log/osdog/miners
+args=(-o "$POOL" -u "$TEMPLATE" --http-host 127.0.0.1 --http-port "$API_PORT" --log-file /var/log/osdog/miners/xmrig.log)
+[[ -z "$ALGO" ]] || args+=(-a "$ALGO")
+[[ -z "$PASS" ]] || args+=(-p "$PASS")
+extra=()
+read -r -a extra <<< "$ADDITION"
+args+=("${extra[@]}" --donate-level 0 --donate-over-proxy 0)
+echo "> Starting XMRig (donate 0%)"
+exec ./xmrig "${args[@]}"

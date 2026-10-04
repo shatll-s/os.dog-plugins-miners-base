@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Update the srbminer entry in manifest.json from a SRBMiner --list-algorithms dump.
 
-Reconciles the algo list (adds new GPU-mineable algos, drops ones removed
+Reconciles the algo list (adds supported CPU/GPU algos, drops ones removed
 upstream, preserves existing order and any manual `i` overrides), bumps
 `latest`, and prepends the new version URL (keeping the most recent N).
 
@@ -24,9 +24,7 @@ ALGO_RE = re.compile(
 
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
-# CPU-only algos are normally excluded, but any already in the manifest are
-# kept as long as upstream still ships them (see reconcile()). This keeps a
-# deliberate CPU pick like randomx without auto-adding every CPU algo.
+# The base package includes CPU miners too; keep all supported algorithms.
 
 
 def parse_algolist(text):
@@ -45,13 +43,13 @@ def parse_algolist(text):
 
 def reconcile(existing, all_names, gpu_names):
     """Merge: keep existing entries still shipped upstream (in original
-    order, preserving their g/i), then append newly-added GPU algos."""
+    order, preserving their g/i), then append newly-added CPU/GPU algos."""
     present = set(all_names)
-    kept = [a for a in existing if a["g"] in present]
-    kept_g = {a["g"] for a in kept}
-    added = sorted(n for n in gpu_names if n not in kept_g)
+    kept = [a for a in existing if a["i"] in present]
+    kept_i = {a["i"] for a in kept}
+    added = sorted(n for n in all_names if n not in kept_i)
     return kept + [{"g": n, "i": n} for n in added], added, \
-        [a["g"] for a in existing if a["g"] not in present]
+        [a["g"] for a in existing if a["i"] not in present]
 
 
 def update_versions(versions, version, keep):
@@ -123,7 +121,7 @@ def main():
     ap.add_argument("--keep-versions", type=int, default=3)
     ap.add_argument("--miner-id", default="srbminer")
     ap.add_argument("--min-algos", type=int, default=20,
-                    help="if fewer algos parse, leave the algo list untouched")
+                    help="if fewer algos parse, reject the release")
     args = ap.parse_args()
 
     with open(args.manifest, encoding="utf-8") as f:
@@ -141,8 +139,8 @@ def main():
         with open(args.algolist, encoding="utf-8", errors="replace") as f:
             all_names, gpu_names = parse_algolist(f.read())
         if len(all_names) < args.min_algos:
-            print("WARN: parsed only %d algos (<%d); keeping existing algo list"
-                  % (len(all_names), args.min_algos), file=sys.stderr)
+            sys.exit("Parsed only %d algos (<%d); refusing to publish an unverified release"
+                     % (len(all_names), args.min_algos))
         else:
             srb["algos"], added, removed = reconcile(
                 srb["algos"], all_names, gpu_names)

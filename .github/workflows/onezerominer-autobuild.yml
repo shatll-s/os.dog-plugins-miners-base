@@ -1,0 +1,31 @@
+name: OneZeroMiner auto-build
+
+on:
+  schedule:
+    - cron: '3-59/10 * * * *'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Force a version (e.g. 1.7.8). Blank = latest stable.'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Build without commit/push'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+# Shared with SRBMiner and BzMiner: each checkout sees the previous update.
+concurrency:
+  group: base-miners-autobuild
+  cancel-in-progress: false
+
+jobs:
+  build:
+    uses: ./.github/workflows/miner-autobuild.yml
+    with:
+      miner: onezerominer
+      version: ${{ github.event.inputs.version || '' }}
+      dry_run: ${{ github.event.inputs.dry_run || 'false' }}

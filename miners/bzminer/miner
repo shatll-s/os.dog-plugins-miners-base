@@ -1,0 +1,24 @@
+#!/bin/bash
+set -euo pipefail
+
+PROFILE="${1:-}"
+[[ -n "$PROFILE" && -f "$PROFILE" ]] || { echo "Usage: $0 <profile.json>"; exit 1; }
+PROFILE=$(realpath "$PROFILE")
+cd "$(dirname "$0")"
+ALGO=$(jq -r '.algo // empty' "$PROFILE")
+POOL=$(jq -r '.pool // empty' "$PROFILE")
+TEMPLATE=$(jq -r '.template // .wallet // empty' "$PROFILE")
+PASS=$(jq -r '.pass // empty' "$PROFILE")
+API_PORT=$(jq -r '.api_port // empty' "$PROFILE")
+ADDITION=$(jq -r '.addition // empty' "$PROFILE")
+[[ -n "$ALGO" && -n "$POOL" && -n "$TEMPLATE" && "$API_PORT" =~ ^[0-9]+$ ]] || { echo "algo, pool, template and api_port are required"; exit 1; }
+
+mkdir -p /var/log/osdog/miners
+# BzMiner 100.x uses -p for the pool, --pass for the password and -o for
+# console output. --user accepts os.dog's combined wallet.worker template.
+args=(-a "$ALGO" -p "$POOL" --user "$TEMPLATE" --set http_enabled=true --set http_address=127.0.0.1 --set "http_port=$API_PORT" --logfile /var/log/osdog/miners/bzminer.log --no-watchdog)
+[[ -z "$PASS" ]] || args+=(--pass "$PASS")
+extra=()
+read -r -a extra <<< "$ADDITION"
+echo "> Starting BzMiner"
+exec ./bzminer "${args[@]}" "${extra[@]}"

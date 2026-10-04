@@ -1,0 +1,31 @@
+#!/bin/bash
+set -euo pipefail
+
+PROFILE="${1:-}"
+[[ -n "$PROFILE" && -f "$PROFILE" ]] || { echo "Usage: $0 <profile.json>"; exit 1; }
+API_PORT=$(jq -r '.api_port // empty' "$PROFILE")
+[[ "$API_PORT" =~ ^[0-9]+$ ]] || exit 1
+summary=$(curl --fail --silent --noproxy '*' --connect-timeout 2 --max-time 5 "http://127.0.0.1:$API_PORT/2/summary")
+backends=$(curl --fail --silent --noproxy '*' --connect-timeout 2 --max-time 5 "http://127.0.0.1:$API_PORT/2/backends" || echo '[]')
+
+# CPU threads contribute to totals, but are not os.dog GPU devices. Multiple
+# OpenCL workers on one card are combined by PCI address.
+jq -ce --argjson now "$(date +%s)" --argjson backends "$backends" '
+  select(.version != null and .hashrate != null) |
+  {miner: "xmrig", ver: .version, online: ($now - (.uptime // 0)),
+   algo: (.connection.algo // ""),
+   total_hr: ((.hashrate.total[0] // .hashrate.total[1] // 0) | tostring),
+   total_share: ((.results.shares_good // 0) | tostring),
+   total_badshare: (((.results.shares_total // 0) - (.results.shares_good // 0)) | tostring)} +
+  ([$backends[] | select(.type == "opencl" or .type == "cuda") |
+    .threads[]? | select(.bus_id != null)] | group_by(.bus_id) |
+    if length == 0 then {} else
+      {hr: map(map(.hashrate[0] // .hashrate[1] // 0) | add),
+       busid: (to_entries | map({key: (.key | tostring),
+         value: (.value[0].bus_id | ascii_downcase | split(":") | .[-2])}) | from_entries)} +
+      (if all(.[]; .[0].health.temperature != null) then
+         {temp: map(.[0].health.temperature)} else {} end) +
+      (if all(.[]; .[0].health.fan_speed != null) then
+         {fan: map(.[0].health.fan_speed)} else {} end)
+    end)
+' <<< "$summary"

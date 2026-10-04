@@ -1,0 +1,30 @@
+name: BzMiner auto-build
+
+on:
+  schedule:
+    - cron: '6-59/10 * * * *'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Force a version (e.g. 100.45). Blank = latest stable.'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Build without commit/push'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: base-miners-autobuild
+  cancel-in-progress: false
+
+jobs:
+  build:
+    uses: ./.github/workflows/miner-autobuild.yml
+    with:
+      miner: bzminer
+      version: ${{ github.event.inputs.version || '' }}
+      dry_run: ${{ github.event.inputs.dry_run || 'false' }}

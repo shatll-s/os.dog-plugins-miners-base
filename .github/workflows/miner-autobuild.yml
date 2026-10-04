@@ -1,0 +1,63 @@
+name: Package miner release
+
+on:
+  workflow_call:
+    inputs:
+      miner:
+        required: true
+        type: string
+      version:
+        type: string
+        default: ''
+      dry_run:
+        type: string
+        default: 'false'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install runtime libraries
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ocl-icd-libopencl1 libgomp1
+      - name: Verify upstream release, reconcile algorithms and package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MINER: ${{ inputs.miner }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/build_release.py --miner "$MINER" --version "$VERSION"
+          jq empty manifest.json
+          bash -n "miners/$MINER/miner" "miners/$MINER/stats"
+          python3 .github/scripts/test_miners.py
+          git diff --check
+      - name: Commit and push
+        env:
+          MINER: ${{ inputs.miner }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          VERSION=$(jq -r --arg id "$MINER" '.miners[] | select(.id == $id) | .latest' manifest.json)
+          git add manifest.json "miners/$MINER" "releases/$MINER-$VERSION.tar.gz"
+          if git diff --cached --quiet; then echo "Already current"; exit 0; fi
+          if [ "$DRY_RUN" = "true" ]; then
+            git diff --cached --stat
+            git -c core.pager=cat diff --cached -- manifest.json
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Auto-build $MINER $VERSION"
+          git push
+      - name: Upload dry-run package
+        if: inputs.dry_run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.miner }}-package
+          path: |
+            manifest.json
+            releases/${{ inputs.miner }}-*.tar.gz

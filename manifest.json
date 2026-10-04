@@ -4,6 +4,21 @@
   "label": "base",
   "miners": [
     {
+      "id": "nekominer",
+      "name": "nekominer",
+      "latest": "0.14.59",
+      "algos": [
+        { "g": "btxv4", "i": "btxv4" },
+        { "g": "vecnohash", "i": "vecnohash" },
+        { "g": "equihash192_7", "i": "equihash" },
+        { "g": "argon2id_exfer", "i": "exfer" },
+        { "g": "poscan", "i": "poscan" }
+      ],
+      "versions": {
+        "0.14.59": "https://github.com/nr800/nekominer/releases/download/v0.14.59/nekominer-osdog-0.14.59.tar.gz"
+      }
+    },
+    {
       "id": "miniz",
       "name": "miniZ",
       "latest": "2.5e3",
@@ -12,10 +27,22 @@
         { "g": "equihash125_4", "i": "125,4" },
         { "g": "equihash144_5", "i": "144,5" },
         { "g": "equihash150_5", "i": "150,5" },
-        { "g": "beamhash2", "i": "150,5,3" },
         { "g": "beamhash3", "i": "144,5s" },
         { "g": "equihash192_7", "i": "192,7" },
-        { "g": "equihash210_9", "i": "210,9" }
+        { "g": "equihash210_9", "i": "210,9" },
+        { "g": "kawpow", "i": "kawpow" },
+        { "g": "meowpow", "i": "MeowPow" },
+        { "g": "firopow", "i": "firopow" },
+        { "g": "meraki", "i": "meraki" },
+        { "g": "fishhash", "i": "fishhash" },
+        { "g": "octopus", "i": "octopus" },
+        { "g": "etchash", "i": "etc" },
+        { "g": "ethash", "i": "ethash" },
+        { "g": "progpow", "i": "progpow" },
+        { "g": "ubqhash", "i": "ubqhash" },
+        { "g": "ethashb3", "i": "ethashb3" },
+        { "g": "karlsenhashv2", "i": "karlsenhashv2" },
+        { "g": "nxlhash", "i": "nxlhash" }
       ],
       "versions": {
         "2.5e3": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/miniz-2.5e3-1.tar.gz"
@@ -34,11 +61,24 @@
         { "g": "flux", "i": "FLUX" },
         { "g": "octopus", "i": "OCTOPUS" },
         { "g": "fishhash", "i": "FISHHASH" },
-        { "g": "karlsenv2", "i": "KARLSENV2" },
+        { "g": "karlsenhashv2", "i": "KARLSENV2" },
         { "g": "nexa", "i": "NEXA" },
         { "g": "radiant", "i": "RADIANT" },
         { "g": "sha3x", "i": "SHA3X" },
-        { "g": "aleph", "i": "ALEPH" }
+        { "g": "aleph", "i": "ALEPH" },
+        { "g": "cuckoocycle", "i": "C29AE" },
+        { "g": "cuckaroo30", "i": "C30CTX" },
+        { "g": "cuckatoo31", "i": "C31" },
+        { "g": "cuckatoo32", "i": "C32" },
+        { "g": "cuckaroo29", "i": "CR29" },
+        { "g": "equihash144_5_excc", "i": "EQUI144_5_EXCC" },
+        { "g": "equihash192_7", "i": "EQUI192_7" },
+        { "g": "equihash210_9", "i": "EQUI210_9" },
+        { "g": "ethashb3", "i": "ETHASHB3" },
+        { "g": "sha256ton", "i": "GRAM" },
+        { "g": "pyrinhash", "i": "PYRIN" },
+        { "g": "pyrinhashv2", "i": "PYRINV2" },
+        { "g": "ubqhash", "i": "UBQHASH" }
       ],
       "versions": {
         "1.98a": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/lolminer-1.98a.tar.gz",
@@ -87,12 +127,142 @@
         { "g": "yescryptr32", "i": "yescryptr32" },
         { "g": "yespower", "i": "yespower" },
         { "g": "yespowertide", "i": "yespowertide" },
-        { "g": "randomx", "i": "randomx" }
+        { "g": "randomx", "i": "randomx" },
+        { "g": "cpupower", "i": "cpupower" },
+        { "g": "flex", "i": "flex" },
+        { "g": "ghostrider", "i": "ghostrider" },
+        { "g": "mike", "i": "mike" },
+        { "g": "minotaurx", "i": "minotaurx" },
+        { "g": "neuromorph", "i": "neuromorph" },
+        { "g": "panthera", "i": "panthera" },
+        { "g": "randomalpha", "i": "randomalpha" },
+        { "g": "randomarq", "i": "randomarq" },
+        { "g": "randomc64", "i": "randomc64" },
+        { "g": "randomepic", "i": "randomepic" },
+        { "g": "randomjuno", "i": "randomjuno" },
+        { "g": "randomscash", "i": "randomscash" },
+        { "g": "randomsnap", "i": "randomsnap" },
+        { "g": "randomvirel", "i": "randomvirel" },
+        { "g": "randomy", "i": "randomy" },
+        { "g": "randomyada", "i": "randomyada" },
+        { "g": "rinhash", "i": "rinhash" },
+        { "g": "verushash", "i": "verushash" },
+        { "g": "yespower2b", "i": "yespower2b" },
+        { "g": "yespoweradvc", "i": "yespoweradvc" },
+        { "g": "yespowerbitok", "i": "yespowerbitok" },
+        { "g": "yespowereqpay", "i": "yespowereqpay" },
+        { "g": "yespowerinterchained", "i": "yespowerinterchained" },
+        { "g": "yespowerltncg", "i": "yespowerltncg" },
+        { "g": "yespowermgpc", "i": "yespowermgpc" },
+        { "g": "yespowermwc", "i": "yespowermwc" },
+        { "g": "yespowerr16", "i": "yespowerr16" },
+        { "g": "yespowersugar", "i": "yespowersugar" },
+        { "g": "yespowerurx", "i": "yespowerurx" }
       ],
       "versions": {
         "3.3.9": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.3.9.tar.gz",
         "3.3.8": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.3.8.tar.gz",
         "3.3.6": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.3.6.tar.gz"
+      }
+    },
+    {
+      "id": "xmrig",
+      "name": "XMRig",
+      "latest": "6.26.0",
+      "algos": [
+        { "g": "cryptonight", "i": "cn/0" },
+        { "g": "cryptonight_v7", "i": "cn/1" },
+        { "g": "cryptonight_v8", "i": "cn/2" },
+        { "g": "cryptonight_r", "i": "cn/r" },
+        { "g": "cn/fast", "i": "cn/fast" },
+        { "g": "cn/half", "i": "cn/half" },
+        { "g": "cn/xao", "i": "cn/xao" },
+        { "g": "cn/rto", "i": "cn/rto" },
+        { "g": "cn/rwz", "i": "cn/rwz" },
+        { "g": "cn/zls", "i": "cn/zls" },
+        { "g": "cn/double", "i": "cn/double" },
+        { "g": "cn/ccx", "i": "cn/ccx" },
+        { "g": "cn-lite/0", "i": "cn-lite/0" },
+        { "g": "cn-lite/1", "i": "cn-lite/1" },
+        { "g": "cn-heavy/0", "i": "cn-heavy/0" },
+        { "g": "cn-heavy/tube", "i": "cn-heavy/tube" },
+        { "g": "cn-heavy/xhv", "i": "cn-heavy/xhv" },
+        { "g": "cryptonight_turtle", "i": "cn-pico" },
+        { "g": "cn-pico/tlo", "i": "cn-pico/tlo" },
+        { "g": "cryptonight_upx2", "i": "cn/upx2" },
+        { "g": "randomx", "i": "rx/0" },
+        { "g": "randomxv2", "i": "rx/2" },
+        { "g": "randomwow", "i": "rx/wow" },
+        { "g": "randomarq", "i": "rx/arq" },
+        { "g": "randomgraft", "i": "rx/graft" },
+        { "g": "randomsfx", "i": "rx/sfx" },
+        { "g": "randomyada", "i": "rx/yada" },
+        { "g": "argon2/chukwa", "i": "argon2/chukwa" },
+        { "g": "argon2/chukwav2", "i": "argon2/chukwav2" },
+        { "g": "argon2/ninja", "i": "argon2/ninja" },
+        { "g": "ghostrider", "i": "ghostrider" }
+      ],
+      "versions": {
+        "6.26.0": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/xmrig-6.26.0.tar.gz"
+      }
+    },
+    {
+      "id": "onezerominer",
+      "name": "OneZeroMiner",
+      "latest": "1.7.8",
+      "algos": [
+        { "g": "dynex", "i": "dynex" },
+        { "g": "xelishashv3", "i": "xelishashv3" },
+        { "g": "cryptix_ox8", "i": "cryptix_ox8" },
+        { "g": "qhash", "i": "qhash" },
+        { "g": "quantus", "i": "quantus" },
+        { "g": "zil", "i": "zilliqa" },
+        { "g": "pearlhash", "i": "pearlhash" }
+      ],
+      "versions": {
+        "1.7.8": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/onezerominer-1.7.8.tar.gz"
+      }
+    },
+    {
+      "id": "bzminer",
+      "name": "BzMiner",
+      "latest": "100.45",
+      "algos": [
+        { "g": "c29", "i": "c29" },
+        { "g": "cn-heavy/0", "i": "cn-heavy/0" },
+        { "g": "cn-heavy/xhv", "i": "cn-heavy/xhv" },
+        { "g": "cn-lite/0", "i": "cn-lite/0" },
+        { "g": "cn-lite/1", "i": "cn-lite/1" },
+        { "g": "cryptonight_turtle", "i": "cn-pico" },
+        { "g": "cn-pico/tlo", "i": "cn-pico/tlo" },
+        { "g": "cryptonight", "i": "cn/0" },
+        { "g": "cryptonight_v7", "i": "cn/1" },
+        { "g": "cryptonight_v8", "i": "cn/2" },
+        { "g": "cn/ccx", "i": "cn/ccx" },
+        { "g": "cn/double", "i": "cn/double" },
+        { "g": "cn/fast", "i": "cn/fast" },
+        { "g": "cryptonight_gpu", "i": "cn/gpu" },
+        { "g": "cn/half", "i": "cn/half" },
+        { "g": "cn/rto", "i": "cn/rto" },
+        { "g": "cn/rwz", "i": "cn/rwz" },
+        { "g": "cryptonight_upx2", "i": "cn/upx2" },
+        { "g": "cn/xao", "i": "cn/xao" },
+        { "g": "cn/zls", "i": "cn/zls" },
+        { "g": "autolykos2", "i": "ergo" },
+        { "g": "etchash", "i": "etchash" },
+        { "g": "ethash", "i": "ethash" },
+        { "g": "kawpow", "i": "kawpow" },
+        { "g": "nexa", "i": "nexa" },
+        { "g": "pearlhash", "i": "pearl" },
+        { "g": "quantus", "i": "quantus" },
+        { "g": "randomx", "i": "randomx" },
+        { "g": "sha256d", "i": "sha256d" },
+        { "g": "verushash", "i": "verus" },
+        { "g": "janushash", "i": "warthog" },
+        { "g": "xelishashv3", "i": "xelis" }
+      ],
+      "versions": {
+        "100.45": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/bzminer-100.45.tar.gz"
       }
     }
   ]
