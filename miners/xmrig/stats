@@ -16,7 +16,9 @@ jq -ce --argjson now "$(date +%s)" --argjson backends "$backends" '
    algo: (.connection.algo // ""),
    total_hr: ((.hashrate.total[0] // .hashrate.total[1] // 0) | tostring),
    total_share: ((.results.shares_good // 0) | tostring),
-   total_badshare: (((.results.shares_total // 0) - (.results.shares_good // 0)) | tostring)} +
+   total_badshare: (((.results.shares_total // 0) - (.results.shares_good // 0)) | tostring),
+   threads_hr: [$backends[] | select(.type == "cpu") | .threads[]? |
+     (.hashrate[0] // .hashrate[1] // null)]} +
   ([$backends[] | select(.type == "opencl" or .type == "cuda") |
     .threads[]? | select(.bus_id != null)] | group_by(.bus_id) |
     if length == 0 then {} else

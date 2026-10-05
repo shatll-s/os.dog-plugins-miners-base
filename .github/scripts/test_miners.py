@@ -88,7 +88,10 @@ class StatsTests(unittest.TestCase):
         summary = {"version": "6.26.0", "uptime": 10, "connection": {"algo": "rx/0"},
                    "hashrate": {"total": [125.75, None, None]},
                    "results": {"shares_good": 7, "shares_total": 9}}
-        backends = [{"type": "cpu", "threads": [{"hashrate": [100]}]},
+        backends = [{"type": "cpu", "threads": [
+                        {"hashrate": [100]}, {"hashrate": [0, 9]},
+                        {"hashrate": [None, 12.5]}, {"hashrate": [None, None]},
+                        {}, {"hashrate": [3.25]}]},
                     {"type": "opencl", "threads": [
                         {"bus_id": "0A:00.0", "hashrate": [12.5]},
                         {"bus_id": "0A:00.0", "hashrate": [13.25]}]}]
@@ -97,6 +100,7 @@ class StatsTests(unittest.TestCase):
         data = json.loads(result.stdout)
         self.assertEqual(data["total_hr"], "125.75")
         self.assertEqual(data["total_badshare"], "2")
+        self.assertEqual(data["threads_hr"], [100, 0, 12.5, None, None, 3.25])
         self.assertEqual(data["hr"], [25.75])
         self.assertEqual(data["busid"], {"0": "0a"})
 
@@ -105,6 +109,7 @@ class StatsTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         data = json.loads(result.stdout)
         self.assertEqual(data["total_hr"], "42.5")
+        self.assertEqual(data["threads_hr"], [])
         self.assertNotIn("hr", data)
 
     def test_onezero_numeric_pci_bus_and_fractional_hashrate(self):
