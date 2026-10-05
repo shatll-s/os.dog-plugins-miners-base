@@ -52,13 +52,13 @@ def reconcile(existing, all_names, gpu_names):
         [a["g"] for a in existing if a["i"] not in present]
 
 
-def update_versions(versions, version, keep):
+def update_versions(versions, version):
     url = URL_TEMPLATE % version
     new = {version: url}
     for k, v in versions.items():
         if k != version:
             new[k] = v
-    return dict(list(new.items())[:keep])
+    return new
 
 
 # ---- custom serializer that matches manifest.json's exact house style ----
@@ -118,7 +118,6 @@ def main():
     ap.add_argument("--manifest", default="manifest.json")
     ap.add_argument("--version", required=True)
     ap.add_argument("--algolist", help="file with raw --list-algorithms output")
-    ap.add_argument("--keep-versions", type=int, default=3)
     ap.add_argument("--miner-id", default="srbminer")
     ap.add_argument("--min-algos", type=int, default=20,
                     help="if fewer algos parse, reject the release")
@@ -132,8 +131,7 @@ def main():
         sys.exit("miner id %r not found in manifest" % args.miner_id)
 
     srb["latest"] = args.version
-    srb["versions"] = update_versions(srb["versions"], args.version,
-                                      args.keep_versions)
+    srb["versions"] = update_versions(srb["versions"], args.version)
 
     if args.algolist:
         with open(args.algolist, encoding="utf-8", errors="replace") as f:

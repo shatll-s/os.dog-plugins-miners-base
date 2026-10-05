@@ -126,7 +126,7 @@ def build(miner, version=None, release_file=None, archive_file=None, readme_file
         entry["algos"] = algorithms
         versions = {version: f"https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/{miner}-{version}.tar.gz"}
         versions.update({k: v for k, v in entry["versions"].items() if k != version})
-        entry["versions"] = dict(list(versions.items())[:3])
+        entry["versions"] = versions
         manifest_path.write_text(dump(manifest))
         print(f"Packaged {miner} {version}, {len(algorithms)} algorithms, upstream SHA-256 verified")
 
