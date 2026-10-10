@@ -6,7 +6,7 @@
     {
       "id": "nekominer",
       "name": "nekominer",
-      "latest": "0.14.59",
+      "latest": "0.14.60",
       "algos": [
         { "g": "btxv4", "i": "btxv4" },
         { "g": "vecnohash", "i": "vecnohash" },
@@ -15,6 +15,7 @@
         { "g": "poscan", "i": "poscan" }
       ],
       "versions": {
+        "0.14.60": "https://github.com/nr800/nekominer/releases/download/v0.14.60/nekominer-osdog-0.14.60.tar.gz",
         "0.14.59": "https://github.com/nr800/nekominer/releases/download/v0.14.59/nekominer-osdog-0.14.59.tar.gz"
       }
     },
