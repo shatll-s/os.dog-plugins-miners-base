@@ -128,6 +128,15 @@ class StatsTests(unittest.TestCase):
         self.assertEqual(data["share"], [4])
         self.assertNotIn("temp", data)
 
+    def test_onezero_invalid_shares_count_as_bad(self):
+        algo = {"name": "pearlhash", "total_rejected_shares": 1}
+        # total_invalid_shares appeared with 1.8.0; older releases only report rejected ones.
+        for extra, expected in (({}, "1"), ({"total_invalid_shares": 2}, "3")):
+            with self.subTest(extra=extra):
+                result = stats("onezerominer", {"/": {"version": "1.8.0", "devices": [], "algos": [algo | extra]}})
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(json.loads(result.stdout)["total_badshare"], expected)
+
     def test_bz_cpu_excluded_from_gpu_arrays_but_in_totals(self):
         response = {"bzminer_version": "v100.45", "uptime_s": 10,
                     "pools": [{"algorithm": "pearl"}], "devices": [

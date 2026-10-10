@@ -15,7 +15,7 @@ jq -ce --argjson now "$(date +%s)" '
    online: ($now - (.uptime_seconds // 0)),
    total_hr: ((.algos[0].total_hashrate // 0) | tostring),
    total_share: ((.algos[0].total_accepted_shares // 0) | tostring),
-   total_badshare: ((.algos[0].total_rejected_shares // 0) | tostring),
+   total_badshare: (((.algos[0].total_rejected_shares // 0) + (.algos[0].total_invalid_shares // 0)) | tostring),
    hr: (.algos[0].hashrates // []),
    share: (.algos[0].devices_accepted_shares // []),
    badshare: (.algos[0].devices_rejected_shares // []),

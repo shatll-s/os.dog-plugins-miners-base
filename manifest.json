@@ -250,7 +250,7 @@
     {
       "id": "onezerominer",
       "name": "OneZeroMiner",
-      "latest": "1.7.8",
+      "latest": "1.8.0",
       "algos": [
         { "g": "dynex", "i": "dynex" },
         { "g": "xelishashv3", "i": "xelishashv3" },
@@ -261,6 +261,7 @@
         { "g": "pearlhash", "i": "pearlhash" }
       ],
       "versions": {
+        "1.8.0": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/onezerominer-1.8.0.tar.gz",
         "1.7.8": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/onezerominer-1.7.8.tar.gz"
       }
     },
