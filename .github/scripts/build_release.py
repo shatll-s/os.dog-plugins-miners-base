@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify and package OneZeroMiner/BzMiner; reconcile their actual algorithms."""
+"""Verify and package OneZeroMiner/BzMiner, link nekominer's own package; reconcile their actual algorithms."""
 import argparse
 import hashlib
 import json
@@ -11,11 +11,13 @@ import tarfile
 import tempfile
 import urllib.request
 
-from miner_algorithms import parse_bz_algos, parse_onezero_help, parse_onezero_readme, reconcile
+from miner_algorithms import parse_bz_algos, parse_neko_readme, parse_onezero_help, parse_onezero_readme, reconcile
 from update_manifest import dump
 
 ROOT = Path(__file__).resolve().parents[2]
-REPOS = {"onezerominer": "OneZeroMiner/onezerominer", "bzminer": "bzminer/bzminer"}
+REPOS = {"onezerominer": "OneZeroMiner/onezerominer", "bzminer": "bzminer/bzminer", "nekominer": "nr800/nekominer"}
+ASSETS = {"onezerominer": "onezerominer-{}.tar.gz", "bzminer": "bzminer_v{}_linux.tar.gz",
+          "nekominer": "nekominer-osdog-{}.tar.gz"}
 
 
 def request(url, accept="application/vnd.github+json"):
@@ -23,6 +25,36 @@ def request(url, accept="application/vnd.github+json"):
     if os.environ.get("GH_TOKEN") and url.startswith("https://api.github.com/"):
         headers["Authorization"] = "Bearer " + os.environ["GH_TOKEN"]
     return urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=120)
+
+
+def read_readme(repo, ref, readme_file):
+    if readme_file:
+        return Path(readme_file).read_text()
+    with request(f"https://raw.githubusercontent.com/{repo}/{ref}/README.md", "text/plain") as response:
+        return response.read().decode()
+
+
+def check_package(package, miner):
+    """Rigs install upstream's os.dog package as is: it must be complete and match its own checksums."""
+    sums = {}
+    for line in (package / "files.md5").read_text().splitlines():
+        digest, name = line.split(maxsplit=1)
+        sums[name.removeprefix("*").removeprefix("./")] = digest
+    for name in ("miner", "stats", miner):
+        if name not in sums or not os.access(package / name, os.X_OK):
+            raise ValueError(f"Upstream package has no executable {name}")
+    for name, digest in sums.items():
+        if Path(name).name != name or hashlib.md5((package / name).read_bytes()).hexdigest() != digest:
+            raise ValueError(f"Upstream package checksum mismatch for {name}")
+
+
+def publish(manifest_path, manifest, entry, version, algorithms, url):
+    entry["latest"] = version
+    entry["algos"] = algorithms
+    versions = {version: url}
+    versions.update({k: v for k, v in entry["versions"].items() if k != version})
+    entry["versions"] = versions
+    manifest_path.write_text(dump(manifest))
 
 
 def build(miner, version=None, release_file=None, archive_file=None, readme_file=None):
@@ -44,7 +76,7 @@ def build(miner, version=None, release_file=None, archive_file=None, readme_file
     if entry["latest"] == version and not archive_file and not forced:
         print(f"{miner} {version}: already current")
         return
-    name = f"onezerominer-{version}.tar.gz" if miner == "onezerominer" else f"bzminer_v{version}_linux.tar.gz"
+    name = ASSETS[miner].format(version)
     asset = next(a for a in release["assets"] if a["name"] == name)
     digest = asset.get("digest") or ""
     if not digest.startswith("sha256:"):
@@ -86,6 +118,11 @@ def build(miner, version=None, release_file=None, archive_file=None, readme_file
             if data["version"].removeprefix("v") != version:
                 raise ValueError("BzMiner binary version differs from release")
             names = parse_bz_algos(output)
+        elif miner == "nekominer":
+            # The binary needs the NVIDIA driver even for --help, so the list comes from the
+            # README of the release tag.
+            check_package(binary.parent, miner)
+            names = parse_neko_readme(read_readme(repo, tag, readme_file))
         else:
             probe = subprocess.run([str(binary), "--version"], cwd=tmp, capture_output=True, text=True, timeout=60)
             said = (probe.stdout + probe.stderr).strip()
@@ -105,15 +142,15 @@ def build(miner, version=None, release_file=None, archive_file=None, readme_file
                     raise ValueError("OneZeroMiner binary version differs from release")
                 output = subprocess.check_output([str(binary), "--help"], cwd=tmp, text=True, timeout=60)
                 names = parse_onezero_help(output)
-            if readme_file:
-                readme = Path(readme_file).read_text()
-            else:
-                with request(f"https://raw.githubusercontent.com/{repo}/{release['target_commitish']}/README.md", "text/plain") as response:
-                    readme = response.read().decode()
-            names += parse_onezero_readme(readme)
+            names += parse_onezero_readme(read_readme(repo, release.get("target_commitish", "HEAD"), readme_file))
         algorithms = reconcile(entry["algos"], names)
         if not algorithms:
             raise ValueError("Refusing to publish an empty algorithm list")
+        if miner == "nekominer":
+            # Nothing to package: upstream's archive is the os.dog package, the manifest links to it.
+            publish(manifest_path, manifest, entry, version, algorithms, asset["browser_download_url"])
+            print(f"Linked {miner} {version}, {len(algorithms)} algorithms, upstream SHA-256 verified")
+            return
         destination = ROOT / "miners" / miner
         files = {"miner": (destination / "miner").read_bytes(),
                  "stats": (destination / "stats").read_bytes(), miner: binary.read_bytes()}
@@ -135,12 +172,8 @@ def build(miner, version=None, release_file=None, archive_file=None, readme_file
         (destination / miner).chmod(0o755)
         if notices.is_file():
             (destination / notices.name).write_bytes(files[notices.name])
-        entry["latest"] = version
-        entry["algos"] = algorithms
-        versions = {version: f"https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/{miner}-{version}.tar.gz"}
-        versions.update({k: v for k, v in entry["versions"].items() if k != version})
-        entry["versions"] = versions
-        manifest_path.write_text(dump(manifest))
+        publish(manifest_path, manifest, entry, version, algorithms,
+                f"https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/{miner}-{version}.tar.gz")
         print(f"Packaged {miner} {version}, {len(algorithms)} algorithms, upstream SHA-256 verified")
 
 
@@ -150,6 +183,6 @@ if __name__ == "__main__":
     parser.add_argument("--version", help="blank = latest stable upstream release")
     parser.add_argument("--release-json", help="use saved GitHub release metadata")
     parser.add_argument("--archive", help="use a previously downloaded archive (still verified)")
-    parser.add_argument("--readme", help="use saved OneZeroMiner README")
+    parser.add_argument("--readme", help="use a saved upstream README")
     args = parser.parse_args()
     build(args.miner, args.version, args.release_json, args.archive, args.readme)

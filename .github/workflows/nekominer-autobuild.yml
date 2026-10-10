@@ -1,0 +1,35 @@
+name: nekominer auto-build
+
+# nr800/nekominer publishes a ready os.dog package with every release, so
+# nothing is built here: the release archive is verified (SHA-256, files.md5,
+# launcher and stats present) and manifest.json is pointed at it. Algorithms
+# follow the "Supported Algorithms" table in the README of the release tag.
+
+on:
+  schedule:
+    - cron: '9-59/10 * * * *'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Force a version (e.g. 0.14.60). Blank = latest stable.'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Verify without commit/push'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: base-miners-autobuild
+  cancel-in-progress: false
+
+jobs:
+  build:
+    uses: ./.github/workflows/miner-autobuild.yml
+    with:
+      miner: nekominer
+      version: ${{ github.event.inputs.version || '' }}
+      dry_run: ${{ github.event.inputs.dry_run || 'false' }}

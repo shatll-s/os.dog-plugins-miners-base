@@ -62,6 +62,16 @@ def parse_onezero_readme(text):
     return re.findall(r"^\|?\s*([a-z][a-z0-9_]*)\s*\|", match[1], re.M)
 
 
+def parse_neko_readme(text):
+    # Stop at the collapsed "Deprecated algorithms" table, which has the same header.
+    # A row starts with the -a value; an alias may follow it in the same cell.
+    match = re.search(r"^## Supported Algorithms\s*\n(.*?)(?=\n<details>|\n## |\Z)", text, re.S | re.M)
+    names = re.findall(r"^\|\s*`([a-z0-9_]+)`", match[1], re.M) if match else []
+    if len(names) < 3:
+        raise ValueError("nekominer README algorithm table missing or incomplete")
+    return names
+
+
 def parse_bz_algos(text):
     rows = json.loads(text)["algorithms"]
     if len(rows) < 5:

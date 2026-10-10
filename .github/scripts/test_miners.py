@@ -11,7 +11,7 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from miner_algorithms import parse_bz_algos, parse_onezero_help, parse_onezero_readme, reconcile
+from miner_algorithms import parse_bz_algos, parse_neko_readme, parse_onezero_help, parse_onezero_readme, reconcile
 from update_manifest import reconcile as reconcile_srb
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -82,6 +82,15 @@ class AlgorithmTests(unittest.TestCase):
         names = ["ergo", "kawpow", "rvn", "pearl", "pearlhash", "randomx", "xmr", "cn/gpu", "cryptonight-gpu"]
         data = json.dumps({"algorithms": [{"name": name} for name in names]})
         self.assertEqual(parse_bz_algos(data), ["cn/gpu", "ergo", "kawpow", "pearl", "randomx"])
+
+    def test_neko_active_table_excludes_alias_and_deprecated(self):
+        readme = ("# nekominer\n\n## Supported Algorithms\n\n| Algorithm | Coin | Dev Fee |\n|---|---|---|\n"
+                  "| `btxv4` (alias `btx`) | BTX | 2% |\n| `vecnohash` | VE (Vecno) | 1% |\n| `equihash` | YEC | 2% |\n\n"
+                  "<details>\n<summary>Deprecated algorithms</summary>\n\n| Algorithm | Coin | Dev Fee |\n|---|---|---|\n"
+                  "| `blake3` |  | 10% |\n\n</details>\n\n## Benchmarks\n\n| RTX 3070 | `exfer` | EXFER |\n")
+        self.assertEqual(parse_neko_readme(readme), ["btxv4", "vecnohash", "equihash"])
+        with self.assertRaises(ValueError):
+            parse_neko_readme("## Usage\n\n| `btxv4` | `vecnohash` | `equihash` |\n")
 
 
 class StatsTests(unittest.TestCase):
@@ -221,6 +230,51 @@ class PackageTests(unittest.TestCase):
             self.assertEqual(entry["algos"], [{"g": "zil", "i": "zilliqa"}, {"g": "quantus", "i": "quantus"},
                                               {"g": "pearlhash", "i": "pearlhash"}])
             self.assertTrue((root / "releases/onezerominer-1.8.0.tar.gz").is_file())
+
+    def test_nekominer_links_verified_upstream_package(self):
+        import build_release
+        import tarfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest = root / "manifest.json"
+            original = json.dumps({"miners": [{"id": "nekominer", "latest": "0.14.60", "algos": [
+                {"g": "equihash192_7", "i": "equihash"}, {"g": "old", "i": "blake3"}], "versions": {"0.14.60": "previous"}}]})
+            manifest.write_text(original)
+            readme = root / "README.md"
+            readme.write_text("## Supported Algorithms\n\n| Algorithm | Coin |\n|---|---|\n| `btxv4` (alias `btx`) | BTX |\n"
+                              "| `equihash` | YEC |\n| `poscan` | NUMN |\n\n<details>\n\n| `blake3` | |\n\n</details>\n")
+            release = root / "release.json"
+
+            def link(version, tampered=False):
+                files = {"nekominer": b"binary", "miner": b"#!/bin/bash\n", "stats": b"#!/bin/bash\n", "utils.sh": b"# helpers\n"}
+                sums = "".join(f"{hashlib.md5(data).hexdigest()}  {name}\n" for name, data in files.items())
+                if tampered:
+                    files["stats"] += b"echo changed\n"
+                archive = root / f"nekominer-osdog-{version}.tar.gz"
+                with tarfile.open(archive, "w:gz") as tar:
+                    for name, data in {**files, "files.md5": sums.encode()}.items():
+                        info = tarfile.TarInfo(name)
+                        info.size = len(data)
+                        info.mode = 0o644 if name == "files.md5" else 0o755
+                        tar.addfile(info, io.BytesIO(data))
+                release.write_text(json.dumps({"tag_name": "v" + version, "assets": [{
+                    "name": archive.name, "browser_download_url": "https://example.invalid/" + archive.name,
+                    "digest": "sha256:" + hashlib.sha256(archive.read_bytes()).hexdigest()}]}))
+                with patch.object(build_release, "ROOT", root):
+                    build_release.build("nekominer", release_file=release, archive_file=archive, readme_file=readme)
+
+            with self.assertRaisesRegex(ValueError, "checksum mismatch for stats"):
+                link("0.14.62", tampered=True)
+            self.assertEqual(manifest.read_text(), original)
+            link("0.14.61")
+            entry = json.loads(manifest.read_text())["miners"][0]
+            self.assertEqual(entry["latest"], "0.14.61")
+            self.assertEqual(list(entry["versions"].items()), [
+                ("0.14.61", "https://example.invalid/nekominer-osdog-0.14.61.tar.gz"), ("0.14.60", "previous")])
+            self.assertEqual(entry["algos"], [{"g": "equihash192_7", "i": "equihash"}, {"g": "btxv4", "i": "btxv4"},
+                                              {"g": "poscan", "i": "poscan"}])
+            # Linked, not packaged: nothing lands under miners/ or releases/.
+            self.assertEqual([p.name for p in root.iterdir() if p.is_dir()], [])
 
     def test_release_checksums_and_source_match_repository(self):
         import tarfile
