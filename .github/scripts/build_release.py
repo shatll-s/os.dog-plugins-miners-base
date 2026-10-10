@@ -87,11 +87,24 @@ def build(miner, version=None, release_file=None, archive_file=None, readme_file
                 raise ValueError("BzMiner binary version differs from release")
             names = parse_bz_algos(output)
         else:
-            reported_version = subprocess.check_output([str(binary), "--version"], cwd=tmp, text=True, timeout=60)
-            if not re.search(r"(?<![0-9.])" + re.escape(version) + r"(?![0-9.])", reported_version):
-                raise ValueError("OneZeroMiner binary version differs from release")
-            output = subprocess.check_output([str(binary), "--help"], cwd=tmp, text=True, timeout=60)
-            names = parse_onezero_help(output)
+            probe = subprocess.run([str(binary), "--version"], cwd=tmp, capture_output=True, text=True, timeout=60)
+            said = (probe.stdout + probe.stderr).strip()
+            if probe.returncode and "no supported gpu" in said.lower():
+                # Since 1.7.9 the binary looks for a GPU before it parses any flag, so a build
+                # runner gets neither --version nor --help. Check the packaged version instead
+                # and keep the known algorithms: only the binary could prove one was removed.
+                conf = binary.parent / "h-manifest.conf"
+                packaged = re.search(r"^CUSTOM_VERSION=(\S+)$", conf.read_text() if conf.is_file() else "", re.M)
+                if not packaged or packaged[1] != version:
+                    raise ValueError("OneZeroMiner package version differs from release")
+                names = [a["i"] for a in entry["algos"]]
+            elif probe.returncode:
+                raise ValueError(f"OneZeroMiner --version exited {probe.returncode}: {said[-300:]}")
+            else:
+                if not re.search(r"(?<![0-9.])" + re.escape(version) + r"(?![0-9.])", probe.stdout):
+                    raise ValueError("OneZeroMiner binary version differs from release")
+                output = subprocess.check_output([str(binary), "--help"], cwd=tmp, text=True, timeout=60)
+                names = parse_onezero_help(output)
             if readme_file:
                 readme = Path(readme_file).read_text()
             else:

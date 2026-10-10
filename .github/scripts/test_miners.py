@@ -2,6 +2,7 @@
 import contextlib
 import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import io
 import json
 from pathlib import Path
 import subprocess
@@ -168,6 +169,49 @@ class PackageTests(unittest.TestCase):
                 build_release.build("bzminer", release_file=release, archive_file=archive)
             self.assertEqual(manifest.read_text(), original)
             self.assertFalse((root / "releases").exists())
+
+    def test_onezero_without_gpu_checks_packaged_version_and_keeps_algorithms(self):
+        import build_release
+        import tarfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "miners/onezerominer").mkdir(parents=True)
+            (root / "releases").mkdir()
+            for name in ("miner", "stats"):
+                (root / "miners/onezerominer" / name).write_text("#!/bin/bash\n")
+            manifest = root / "manifest.json"
+            original = json.dumps({"miners": [{"id": "onezerominer", "latest": "1.7.8", "algos": [
+                {"g": "zil", "i": "zilliqa"}, {"g": "quantus", "i": "quantus"}], "versions": {"1.7.8": "old"}}]})
+            manifest.write_text(original)
+            # What 1.8.0 answers to every flag on a machine without a GPU.
+            members = {"onezerominer/onezerominer": b"#!/bin/sh\necho ' 2026-10-10 07:44:54  No Supported GPU found'\nexit 1\n",
+                       "onezerominer/h-manifest.conf": b"CUSTOM_NAME=onezerominer\nCUSTOM_VERSION=1.8.0\n"}
+            archive = root / "upstream.tar.gz"
+            with tarfile.open(archive, "w:gz") as tar:
+                for name, data in members.items():
+                    info = tarfile.TarInfo(name)
+                    info.size = len(data)
+                    tar.addfile(info, io.BytesIO(data))
+            digest = "sha256:" + hashlib.sha256(archive.read_bytes()).hexdigest()
+            readme = root / "README.md"
+            readme.write_text("Supported algorithms\n------\nAlgorithm | Nvidia | AMD\nzil | 0% | x\npearlhash | 1% | x\n")
+            release = root / "release.json"
+
+            def package(version):
+                release.write_text(json.dumps({"tag_name": "v" + version, "assets": [{
+                    "name": f"onezerominer-{version}.tar.gz", "digest": digest}]}))
+                with patch.object(build_release, "ROOT", root):
+                    build_release.build("onezerominer", release_file=release, archive_file=archive, readme_file=readme)
+
+            with self.assertRaisesRegex(ValueError, "package version differs"):
+                package("1.8.1")
+            self.assertEqual(manifest.read_text(), original)
+            package("1.8.0")
+            entry = json.loads(manifest.read_text())["miners"][0]
+            self.assertEqual((entry["latest"], list(entry["versions"])), ("1.8.0", ["1.8.0", "1.7.8"]))
+            self.assertEqual(entry["algos"], [{"g": "zil", "i": "zilliqa"}, {"g": "quantus", "i": "quantus"},
+                                              {"g": "pearlhash", "i": "pearlhash"}])
+            self.assertTrue((root / "releases/onezerominer-1.8.0.tar.gz").is_file())
 
     def test_release_checksums_and_source_match_repository(self):
         import tarfile
