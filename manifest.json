@@ -6,15 +6,17 @@
     {
       "id": "nekominer",
       "name": "nekominer",
-      "latest": "0.14.60",
+      "latest": "0.15.0",
       "algos": [
         { "g": "btxv4", "i": "btxv4" },
         { "g": "vecnohash", "i": "vecnohash" },
         { "g": "equihash192_7", "i": "equihash" },
         { "g": "argon2id_exfer", "i": "exfer" },
-        { "g": "poscan", "i": "poscan" }
+        { "g": "poscan", "i": "poscan" },
+        { "g": "cmfd", "i": "cmfd" }
       ],
       "versions": {
+        "0.15.0": "https://github.com/nr800/nekominer/releases/download/v0.15.0/nekominer-osdog-0.15.0.tar.gz",
         "0.14.60": "https://github.com/nr800/nekominer/releases/download/v0.14.60/nekominer-osdog-0.14.60.tar.gz",
         "0.14.59": "https://github.com/nr800/nekominer/releases/download/v0.14.59/nekominer-osdog-0.14.59.tar.gz"
       }
