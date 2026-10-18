@@ -95,7 +95,7 @@
     {
       "id": "srbminer",
       "name": "SRBMiner-Multi",
-      "latest": "3.7.6",
+      "latest": "3.7.7",
       "algos": [
         { "g": "ethash", "i": "ethash" },
         { "g": "etchash", "i": "etchash" },
@@ -116,7 +116,6 @@
         { "g": "progpow_zano", "i": "progpow_zano" },
         { "g": "cryptonight_gpu", "i": "cryptonight_gpu" },
         { "g": "cryptonight_turtle", "i": "cryptonight_turtle" },
-        { "g": "argon2id_exfer", "i": "argon2id_exfer" },
         { "g": "pearlhash", "i": "pearlhash" },
         { "g": "oggpow", "i": "oggpow" },
         { "g": "argon2d_16000", "i": "argon2d_16000" },
@@ -158,16 +157,15 @@
         { "g": "yespowerr16", "i": "yespowerr16" },
         { "g": "yespowersugar", "i": "yespowersugar" },
         { "g": "yespowerurx", "i": "yespowerurx" },
-        { "g": "blake3_an", "i": "blake3_an" },
         { "g": "noid", "i": "noid" },
         { "g": "quantus", "i": "quantus" },
         { "g": "randomdrgx", "i": "randomdrgx" },
         { "g": "randompcn", "i": "randompcn" },
         { "g": "randomzqvx", "i": "randomzqvx" },
-        { "g": "sha256d_csd", "i": "sha256d_csd" },
-        { "g": "sha3t", "i": "sha3t" }
+        { "g": "sha256d_csd", "i": "sha256d_csd" }
       ],
       "versions": {
+        "3.7.7": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.7.7.tar.gz",
         "3.7.6": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.7.6.tar.gz",
         "3.7.5": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.7.5.tar.gz",
         "3.7.4": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.7.4.tar.gz",
