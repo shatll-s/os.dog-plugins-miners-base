@@ -17,6 +17,8 @@ SYSTEM_NAMES = {
     "pearl": "pearlhash", "xelis": "xelishashv3",
     "warthog": "janushash", "verus": "verushash",
     "zilliqa": "zil",
+    # Parano1d: OneZeroMiner's poseidon2b is SRBMiner's noid.
+    "poseidon2b": "noid",
 }
 
 # BzMiner lists aliases as independent rows. Keep one parameter per PoW.
@@ -47,16 +49,18 @@ def parse_onezero_help(text):
     match = re.search(r"Currently supported algorithms are:\s*(.*?)\n\s*--a2", text, re.S)
     if not match:
         raise ValueError("OneZeroMiner supported-algorithm section missing")
-    names = re.findall(r"^\s*-\s+([a-z0-9_]+)\s*$", match[1], re.M)
+    # Since 1.8.2 a line may name aliases: "- poseidon2b (aliases: parano1d, noid)".
+    names = re.findall(r"^\s*-\s+([a-z0-9_]+)(?:\s+\([^)]*\))?\s*$", match[1], re.M)
     if len(names) < 5:
         raise ValueError("Incomplete OneZeroMiner algorithm list")
     return names
 
 
 # The binary's help omits pearlhash in 1.7.8. Only read the active table,
-# never examples or the outdated dual-mining pairs below it.
+# never examples or the outdated dual-mining pairs below it. A name may carry
+# an alias in brackets: "poseidon2b(noid)".
 ONEZERO_TABLE_RE = re.compile(r"^(?:#+\s*)?Supported algorithms\s*\n(.*?)(?=\n(?:#+\s*)?Supported dual mining pairs|\n## |\Z)", re.S | re.M)
-ONEZERO_ROW_RE = re.compile(r"^\|?\s*([a-z][a-z0-9_]*)\s*\|(.*)$", re.M)
+ONEZERO_ROW_RE = re.compile(r"^\|?\s*([a-z][a-z0-9_]*)(?:\s*\([^)|]*\))?\s*\|(.*)$", re.M)
 # Stop at the collapsed "Deprecated algorithms" table, which has the same header.
 NEKO_TABLE_RE = re.compile(r"^## Supported Algorithms\s*\n(.*?)(?=\n<details>|\n## |\Z)", re.S | re.M)
 

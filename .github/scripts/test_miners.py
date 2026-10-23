@@ -74,6 +74,19 @@ class AlgorithmTests(unittest.TestCase):
         self.assertIn("pearlhash", names)
         self.assertNotIn("xelishashv2", names)
 
+    def test_onezero_names_with_aliases(self):
+        # 1.8.2 prints aliases after the name, and its README puts one in brackets.
+        help_text = "Currently supported algorithms are:\n" + "".join(
+            "\t- " + a + "\n" for a in ["dynex", "xelishashv3", "cryptix_ox8", "qhash", "quantus",
+                                        "poseidon2b (aliases: parano1d, noid)", "zilliqa"])
+        help_text += "\n --a2 <algo2>"
+        self.assertIn("poseidon2b", parse_onezero_help(help_text))
+        readme = "Supported algorithms\n------\nAlgorithm | Nvidia | AMD |\nquantus | 2% | x |\nposeidon2b(noid) | 1% | x |\n"
+        self.assertEqual(parse_onezero_readme(readme), ["quantus", "poseidon2b"])
+        self.assertEqual(onezero_readme_fees(readme), {"quantus": 2, "poseidon2b": 1})
+        self.assertEqual(reconcile([{"g": "quantus", "i": "quantus"}], ["quantus", "poseidon2b"]),
+                         [{"g": "quantus", "i": "quantus"}, {"g": "noid", "i": "poseidon2b"}])
+
     def test_bad_algorithm_dump_fails_closed(self):
         with self.assertRaises(ValueError):
             parse_onezero_help("library load failure")
