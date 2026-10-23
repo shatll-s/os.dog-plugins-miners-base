@@ -6,8 +6,9 @@
     {
       "id": "nekominer",
       "name": "nekominer",
-      "latest": "0.17.4",
+      "latest": "0.18.0",
       "algos": [
+        { "g": "quantus", "i": "quantus" },
         { "g": "btxv4", "i": "btxv4" },
         { "g": "equihash192_7", "i": "equihash192_7" },
         { "g": "equihash144_5", "i": "equihash144_5" },
@@ -17,6 +18,7 @@
         { "g": "vela", "i": "vela" }
       ],
       "versions": {
+        "0.18.0": "https://github.com/nr800/nekominer/releases/download/v0.18.0/nekominer-osdog-0.18.0.tar.gz",
         "0.17.4": "https://github.com/nr800/nekominer/releases/download/v0.17.4/nekominer-osdog-0.17.4.tar.gz",
         "0.17.3": "https://github.com/nr800/nekominer/releases/download/v0.17.3/nekominer-osdog-0.17.3.tar.gz",
         "0.17.2": "https://github.com/nr800/nekominer/releases/download/v0.17.2/nekominer-osdog-0.17.2.tar.gz",
@@ -51,6 +53,9 @@
         },
         "0.17.0": {
           "equihash144_5": 2
+        },
+        "0.18.0": {
+          "quantus": 1
         }
       }
     },
