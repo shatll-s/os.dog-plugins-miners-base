@@ -59,10 +59,7 @@
       "name": "miniZ",
       "latest": "2.5e3",
       "algos": [
-        { "g": "equihash96_5", "i": "96,5" },
-        { "g": "equihash125_4", "i": "125,4" },
         { "g": "equihash144_5", "i": "144,5" },
-        { "g": "equihash150_5", "i": "150,5" },
         { "g": "beamhash3", "i": "144,5s" },
         { "g": "equihash192_7", "i": "192,7" },
         { "g": "equihash210_9", "i": "210,9" },
