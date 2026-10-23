@@ -489,6 +489,17 @@
         "1.8.1": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/onezerominer-1.8.1.tar.gz",
         "1.8.0": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/onezerominer-1.8.0.tar.gz",
         "1.7.8": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/onezerominer-1.7.8.tar.gz"
+      },
+      "fees": {
+        "1.7.8": {
+          "dynex": 2,
+          "xelishashv3": 2,
+          "cryptix_ox8": 2,
+          "qhash": 3,
+          "quantus": 2,
+          "zil": 0,
+          "pearlhash": 1
+        }
       }
     },
     {
