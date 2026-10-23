@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify and package OneZeroMiner/BzMiner, link nekominer's own package; reconcile their actual algorithms."""
+"""Verify and package OneZeroMiner/BzMiner, link nekominer's own package; reconcile their actual algorithms and dev fees."""
 import argparse
 import hashlib
 import json
@@ -11,7 +11,9 @@ import tarfile
 import tempfile
 import urllib.request
 
-from miner_algorithms import parse_bz_algos, parse_neko_readme, parse_onezero_help, parse_onezero_readme, reconcile
+from miner_algorithms import (bz_algo_fees, neko_readme_fees, onezero_readme_fees, parse_bz_algos,
+                              parse_neko_readme, parse_onezero_help, parse_onezero_readme, reconcile)
+from miner_fees import record_fees
 from update_manifest import dump
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -118,11 +120,14 @@ def build(miner, version=None, release_file=None, archive_file=None, readme_file
             if data["version"].removeprefix("v") != version:
                 raise ValueError("BzMiner binary version differs from release")
             names = parse_bz_algos(output)
+            fees = bz_algo_fees(output)
         elif miner == "nekominer":
             # The binary needs the NVIDIA driver even for --help, so the list comes from the
             # README of the release tag.
             check_package(binary.parent, miner)
-            names = parse_neko_readme(read_readme(repo, tag, readme_file))
+            readme = read_readme(repo, tag, readme_file)
+            names = parse_neko_readme(readme)
+            fees = neko_readme_fees(readme)
         else:
             probe = subprocess.run([str(binary), "--version"], cwd=tmp, capture_output=True, text=True, timeout=60)
             said = (probe.stdout + probe.stderr).strip()
@@ -142,10 +147,16 @@ def build(miner, version=None, release_file=None, archive_file=None, readme_file
                     raise ValueError("OneZeroMiner binary version differs from release")
                 output = subprocess.check_output([str(binary), "--help"], cwd=tmp, text=True, timeout=60)
                 names = parse_onezero_help(output)
-            names += parse_onezero_readme(read_readme(repo, release.get("target_commitish", "HEAD"), readme_file))
+            readme = read_readme(repo, release.get("target_commitish", "HEAD"), readme_file)
+            names += parse_onezero_readme(readme)
+            fees = onezero_readme_fees(readme)
         algorithms = reconcile(entry["algos"], names)
         if not algorithms:
             raise ValueError("Refusing to publish an empty algorithm list")
+        # The README may name an algorithm by its os.dog name (OneZeroMiner's "zil").
+        found = {a["g"]: fees.get(a["i"], fees.get(a["g"])) for a in algorithms}
+        changed = record_fees(entry, version, {g: fee for g, fee in found.items() if fee is not None})
+        print(f"{miner} {version} dev fees: " + (f"new from this version {changed}" if changed else "unchanged"))
         if miner == "nekominer":
             # Nothing to package: upstream's archive is the os.dog package, the manifest links to it.
             publish(manifest_path, manifest, entry, version, algorithms, asset["browser_download_url"])

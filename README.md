@@ -126,6 +126,11 @@ Add an entry to the `miners` array:
       ],
       "versions": {
         "<version>": "https://raw.githubusercontent.com/.../releases/<miner_id>-<version>.tar.gz"
+      },
+      "fees": {
+        "<from_version>": {
+          "<system_algo_name>": <percent>
+        }
       }
     }
   ]
@@ -135,6 +140,43 @@ Add an entry to the `miners` array:
 Manifest fields:
 - `algos` — list of supported algorithms for the **latest** version. `g` is the algorithm name in the os.dog system, `i` is the parameter passed to this specific miner implementation
 - `versions` — map of version → archive URL (latest version first)
+- `fees` — optional dev fees by version, see below
+
+### Dev fees
+
+`fees` maps a version to the dev fees that apply **from that version on**, by
+system algorithm name (`g`, not `i`). A fee is a percentage in [0, 100):
+`0.65` means 0.65%.
+
+```json
+"fees": {
+  "0.17.0": { "btxv4": 3, "equihash144_5": 2 },
+  "0.17.1": { "btxv4": 1 },
+  "0.17.5": { "btxv4": null }
+}
+```
+
+For version V and algorithm A, take the newest key not newer than V whose
+record lists A; each algorithm is looked up on its own and a record never
+applies to older versions. Above, 0.17.4 pays 1% on btxv4 and 2% on
+equihash144_5, 0.16.4 pays an unknown fee on both, and 0.17.5 pays an unknown
+fee on btxv4 and 2% on equihash144_5. `null` means "unknown from this version
+on". No record, or no `fees` at all, means unknown, which is not 0%. The key
+`"0"` means "since the first version"; use it only when the fee has never
+changed.
+
+Versions compare by their groups of digits (as numbers) and of letters (as
+text). Separators (`.`, `-`, `_`) and a leading `v` are ignored, trailing zero
+groups don't count (`1.2` = `1.2.0`), and a version is newer than its own
+prefix (`1.98` < `1.98a`, `2.5e` < `2.5e3`).
+
+The auto-builds keep `fees` current: when a release states a fee that differs
+from the one in force, they add a record for that version. SRBMiner's fees
+come from its `--list-algorithms`, BzMiner's from `--list-algos`, nekominer's
+and OneZeroMiner's from the README table of the release. lolMiner, miniZ and
+XMRig are packaged by hand, and so are their records: take fees only from the
+miner's official documentation (README, release notes, website), from the
+version where it is stated, and link the source in the commit message.
 
 The same manifest structure is used across all plugin packages (`os.dog-plugins-miners-base`, `os.dog-plugins-miners-extra`, etc.) — only `package` and `miners` content differ.
 

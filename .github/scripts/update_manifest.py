@@ -3,7 +3,8 @@
 
 Reconciles the algo list (adds supported CPU/GPU algos, drops ones removed
 upstream, preserves existing order and any manual `i` overrides), bumps
-`latest`, and prepends the new version URL (keeping the most recent N).
+`latest`, prepends the new version URL, and records the dev fees the dump
+states when they differ from the ones in force.
 
 The manifest is rewritten with a custom serializer that reproduces the
 repo's exact formatting, so unchanged miners stay byte-identical and diffs
@@ -14,31 +15,41 @@ import json
 import re
 import sys
 
+from miner_fees import record_fees
+
 URL_TEMPLATE = ("https://raw.githubusercontent.com/shatll-s/"
                 "os.dog-plugins-miners-base/main/releases/srbminer-%s.tar.gz")
 
 # A row from `--list-algorithms`, e.g. "[1.00%]   [ -  A  N  I ]   autolykos2"
-# Groups: cpu, amd, nvidia, intel flag chars + the algo name.
+# Groups: dev fee %, cpu, amd, nvidia, intel flag chars + the algo name.
 ALGO_RE = re.compile(
-    r"^\[\s*[\d.]+%\]\s*\[\s*(\S)\s+(\S)\s+(\S)\s+(\S)\s*\]\s+(\S+)\s*$")
+    r"^\[\s*([\d.]+)%\]\s*\[\s*(\S)\s+(\S)\s+(\S)\s+(\S)\s*\]\s+(\S+)\s*$")
 
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 # The base package includes CPU miners too; keep all supported algorithms.
 
 
+def _algo_rows(text):
+    for line in ANSI_RE.sub("", text).replace("\r", "").splitlines():
+        m = ALGO_RE.match(line.strip())
+        if m:
+            yield m.groups()
+
+
 def parse_algolist(text):
     """Return (all_names, gpu_names) parsed from a --list-algorithms dump."""
     all_names, gpu_names = [], []
-    for line in ANSI_RE.sub("", text).replace("\r", "").splitlines():
-        m = ALGO_RE.match(line.strip())
-        if not m:
-            continue
-        _cpu, amd, nvidia, intel, name = m.groups()
+    for _fee, _cpu, amd, nvidia, intel, name in _algo_rows(text):
         all_names.append(name)
         if amd != "-" or nvidia != "-" or intel != "-":
             gpu_names.append(name)
     return all_names, gpu_names
+
+
+def parse_algolist_fees(text):
+    """{algo name: dev fee %} from the same dump."""
+    return {row[5]: float(row[0]) for row in _algo_rows(text)}
 
 
 def reconcile(existing, all_names, gpu_names):
@@ -86,6 +97,20 @@ def _dump_miner(m):
             for j, (vk, vv) in enumerate(items):
                 vc = "," if j < len(items) - 1 else ""
                 out.append('        %s: %s%s' % (_scalar(vk), _scalar(vv), vc))
+            out.append("      }" + tail)
+        elif k == "fees" and isinstance(m[k], dict) and all(isinstance(r, dict) for r in m[k].values()):
+            # One algorithm per line, so a fee change is a one-line diff. Anything
+            # malformed falls through to the plain line below: kept, never dropped.
+            out.append('      "fees": {')
+            items = list(m["fees"].items())
+            for j, (version, rates) in enumerate(items):
+                vc = "," if j < len(items) - 1 else ""
+                out.append('        %s: {' % _scalar(version))
+                pairs = list(rates.items())
+                for n, (algo, fee) in enumerate(pairs):
+                    fc = "," if n < len(pairs) - 1 else ""
+                    out.append('          %s: %s%s' % (_scalar(algo), _scalar(fee), fc))
+                out.append("        }" + vc)
             out.append("      }" + tail)
         else:
             out.append('      %s: %s%s' % (_scalar(k), _scalar(m[k]), tail))
@@ -135,7 +160,8 @@ def main():
 
     if args.algolist:
         with open(args.algolist, encoding="utf-8", errors="replace") as f:
-            all_names, gpu_names = parse_algolist(f.read())
+            text = f.read()
+        all_names, gpu_names = parse_algolist(text)
         if len(all_names) < args.min_algos:
             sys.exit("Parsed only %d algos (<%d); refusing to publish an unverified release"
                      % (len(all_names), args.min_algos))
@@ -145,6 +171,10 @@ def main():
             print("algos: +%d %s / -%d %s / total %d"
                   % (len(added), added, len(removed), removed,
                      len(srb["algos"])), file=sys.stderr)
+            fees = parse_algolist_fees(text)
+            changed = record_fees(srb, args.version, {a["g"]: fees[a["i"]] for a in srb["algos"] if a["i"] in fees})
+            print("dev fees: %s" % ("new from this version %s" % changed if changed else "unchanged"),
+                  file=sys.stderr)
 
     with open(args.manifest, "w", encoding="utf-8") as f:
         f.write(dump(manifest))

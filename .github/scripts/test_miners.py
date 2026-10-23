@@ -11,8 +11,10 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from miner_algorithms import parse_bz_algos, parse_neko_readme, parse_onezero_help, parse_onezero_readme, reconcile
-from update_manifest import reconcile as reconcile_srb
+from miner_algorithms import (bz_algo_fees, neko_readme_fees, onezero_readme_fees, parse_bz_algos,
+                              parse_neko_readme, parse_onezero_help, parse_onezero_readme, reconcile)
+from miner_fees import fee_in_force, record_fees, version_key
+from update_manifest import dump, parse_algolist_fees, reconcile as reconcile_srb
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -89,8 +91,71 @@ class AlgorithmTests(unittest.TestCase):
                   "<details>\n<summary>Deprecated algorithms</summary>\n\n| Algorithm | Coin | Dev Fee |\n|---|---|---|\n"
                   "| `blake3` |  | 10% |\n\n</details>\n\n## Benchmarks\n\n| RTX 3070 | `exfer` | EXFER |\n")
         self.assertEqual(parse_neko_readme(readme), ["btxv4", "vecnohash", "equihash"])
+        self.assertEqual(neko_readme_fees(readme.replace("| BTX | 2% |", "| BTX | 2%, **0% on a pool** |")),
+                         {"btxv4": 2, "vecnohash": 1, "equihash": 2})
         with self.assertRaises(ValueError):
             parse_neko_readme("## Usage\n\n| `btxv4` | `vecnohash` | `equihash` |\n")
+
+    def test_fee_sources(self):
+        dump_text = "\x1b[33m[0.85%]\x1b[0m   [ C  A  -  - ]   argon2d_16000\r\n[1.00%] [ - A N I ] autolykos2\nnoise\n"
+        self.assertEqual(parse_algolist_fees(dump_text), {"argon2d_16000": 0.85, "autolykos2": 1.0})
+        algos = [{"name": "rvn", "dev_fee": 1.0}, {"name": "kawpow", "dev_fee": 1}, {"name": "etc", "dev_fee": 0.5},
+                 {"name": "ethw", "dev_fee": 0.5}, {"name": "ethash", "dev_fee": 1.0}, {"name": "sha256d", "dev_fee": 0},
+                 {"name": "nofee"}]
+        # Aliases fold into parse_bz_algos' names; ethw and ethash disagree, so ethash has no fee.
+        self.assertEqual(bz_algo_fees(json.dumps({"algorithms": algos})), {"kawpow": 1, "etchash": 0.5, "sha256d": 0})
+        readme = ("Supported algorithms\n------\nAlgorithm | Nvidia | AMD |\n---|---|---|\ndynex | 2% | x |\n"
+                  "xelishashv3 | 2% | 2% |\nsplit | 1% | 2% |\n\nSupported dual mining pairs\n------\nxelishashv2-qhash | 1% |\n")
+        self.assertEqual(onezero_readme_fees(readme), {"dynex": 2, "xelishashv3": 2})
+
+
+class ManifestTests(unittest.TestCase):
+    def test_manifest_survives_the_auto_build_rewrite(self):
+        # Every auto-build rewrites manifest.json with dump(): hand edits must come out unchanged.
+        text = (ROOT / "manifest.json").read_text()
+        self.assertEqual(dump(json.loads(text)), text)
+
+    def test_dump_keeps_fees_and_null(self):
+        manifest = {"miners": [{"id": "x", "latest": "1.1", "algos": [], "versions": {},
+                                "fees": {"0": {"a": 3}, "1.1": {"a": 0.65, "b": None}}}]}
+        text = dump(manifest)
+        self.assertEqual(json.loads(text), manifest)
+        self.assertIn('\n          "b": null\n', text)
+        broken = {"miners": [{"id": "x", "fees": {"1.0": 2}}]}
+        self.assertEqual(json.loads(dump(broken)), broken)
+
+
+class FeeTests(unittest.TestCase):
+    def test_version_order(self):
+        for older, newer in [("0.14.9", "0.14.60"), ("1.9", "1.10"), ("1.66", "1.98"), ("1.98", "1.98a"),
+                             ("2.5e2", "2.5e3"), ("100.46", "100.50"), ("0", "0.0.1"), ("1.0.0", "1.0.0-rc1")]:
+            self.assertLess(version_key(older), version_key(newer), (older, newer))
+        self.assertEqual(version_key("v1.2.3"), version_key("1.2.3"))
+        self.assertEqual(version_key("1.2"), version_key("1.2.0"))
+
+    def test_fee_in_force_applies_records_forward_only(self):
+        fees = {"0.17.0": {"btxv4": 3, "equihash144_5": 2}, "0.17.1": {"btxv4": 1}, "0.17.5": {"btxv4": None}}
+        for version, algo, fee in [("0.16.4", "btxv4", None), ("0.17.0", "btxv4", 3), ("0.17.0", "equihash144_5", 2),
+                                   ("0.17.1", "btxv4", 1), ("0.17.1", "equihash144_5", 2), ("0.17.4", "btxv4", 1),
+                                   ("0.17.5", "btxv4", None), ("0.17.5", "equihash144_5", 2), ("0.17.6", "btxv4", None)]:
+            self.assertEqual(fee_in_force(fees, version, algo), fee, (version, algo))
+        fees = {"0": {"pearlhash": 3}, "1.2.3": {"pearlhash": 1}}
+        self.assertEqual([fee_in_force(fees, v, "pearlhash") for v in ("1.2.1", "1.2.3", "1.3.0")], [3, 1, 1])
+        self.assertIsNone(fee_in_force({"0.17.1": {"vela": 3}}, "0.17.0", "vela"))
+        self.assertIsNone(fee_in_force({}, "1.0", "vela"))
+
+    def test_record_fees_adds_only_what_changed(self):
+        entry = {"algos": [{"g": "a", "i": "a"}, {"g": "b", "i": "b"}], "versions": {}}
+        self.assertEqual(record_fees(entry, "1.0", {"b": 2.0, "a": 1.5}), {"b": 2, "a": 1.5})
+        self.assertEqual(record_fees(entry, "1.1", {"a": 1.5, "b": 2}), {})
+        self.assertEqual(record_fees(entry, "1.10", {"a": 1.0}), {"a": 1})
+        record_fees(entry, "1.9", {"b": 3})
+        self.assertEqual(list(entry), ["algos", "versions", "fees"])
+        self.assertEqual(list(entry["fees"].items()), [("1.0", {"a": 1.5, "b": 2}), ("1.9", {"b": 3}), ("1.10", {"a": 1})])
+        self.assertEqual(list(entry["fees"]["1.0"]), ["a", "b"])
+        broken = {"algos": [], "fees": {"1.0": 5}}
+        self.assertEqual(record_fees(broken, "1.0", {"a": 1}), {})
+        self.assertEqual(broken["fees"], {"1.0": 5})
 
 
 class StatsTests(unittest.TestCase):
@@ -229,6 +294,8 @@ class PackageTests(unittest.TestCase):
             self.assertEqual((entry["latest"], list(entry["versions"])), ("1.8.0", ["1.8.0", "1.7.8"]))
             self.assertEqual(entry["algos"], [{"g": "zil", "i": "zilliqa"}, {"g": "quantus", "i": "quantus"},
                                               {"g": "pearlhash", "i": "pearlhash"}])
+            # The README names zil by its os.dog name; quantus has no row, so no fee.
+            self.assertEqual(entry["fees"], {"1.8.0": {"zil": 0, "pearlhash": 1}})
             self.assertTrue((root / "releases/onezerominer-1.8.0.tar.gz").is_file())
 
     def test_nekominer_links_verified_upstream_package(self):
@@ -241,8 +308,10 @@ class PackageTests(unittest.TestCase):
                 {"g": "equihash192_7", "i": "equihash"}, {"g": "old", "i": "blake3"}], "versions": {"0.14.60": "previous"}}]})
             manifest.write_text(original)
             readme = root / "README.md"
-            readme.write_text("## Supported Algorithms\n\n| Algorithm | Coin |\n|---|---|\n| `btxv4` (alias `btx`) | BTX |\n"
-                              "| `equihash` | YEC |\n| `poscan` | NUMN |\n\n<details>\n\n| `blake3` | |\n\n</details>\n")
+            table = ("## Supported Algorithms\n\n| Algorithm | Coin | Dev Fee |\n|---|---|---|\n"
+                     "| `btxv4` (alias `btx`) | BTX | 2%, **0% on a pool** |\n| `equihash` | YEC | 2% |\n"
+                     "| `poscan` | NUMN | 10% |\n\n<details>\n\n| `blake3` | | 10% |\n\n</details>\n")
+            readme.write_text(table)
             release = root / "release.json"
 
             def link(version, tampered=False):
@@ -273,8 +342,14 @@ class PackageTests(unittest.TestCase):
                 ("0.14.61", "https://example.invalid/nekominer-osdog-0.14.61.tar.gz"), ("0.14.60", "previous")])
             self.assertEqual(entry["algos"], [{"g": "equihash192_7", "i": "equihash"}, {"g": "btxv4", "i": "btxv4"},
                                               {"g": "poscan", "i": "poscan"}])
+            self.assertEqual(entry["fees"], {"0.14.61": {"equihash192_7": 2, "btxv4": 2, "poscan": 10}})
             # Linked, not packaged: nothing lands under miners/ or releases/.
             self.assertEqual([p.name for p in root.iterdir() if p.is_dir()], [])
+            # A later release adds a record only for the fee that changed.
+            readme.write_text(table.replace("| NUMN | 10% |", "| NUMN | 5% |"))
+            link("0.14.63")
+            self.assertEqual(json.loads(manifest.read_text())["miners"][0]["fees"], {
+                "0.14.61": {"equihash192_7": 2, "btxv4": 2, "poscan": 10}, "0.14.63": {"poscan": 5}})
 
     def test_release_checksums_and_source_match_repository(self):
         import tarfile
