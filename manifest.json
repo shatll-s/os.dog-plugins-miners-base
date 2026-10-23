@@ -482,7 +482,8 @@
         { "g": "qhash", "i": "qhash" },
         { "g": "quantus", "i": "quantus" },
         { "g": "zil", "i": "zilliqa" },
-        { "g": "pearlhash", "i": "pearlhash" }
+        { "g": "pearlhash", "i": "pearlhash" },
+        { "g": "noid", "i": "poseidon2b" }
       ],
       "versions": {
         "1.8.2": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/onezerominer-1.8.2.tar.gz",
@@ -499,6 +500,9 @@
           "quantus": 2,
           "zil": 0,
           "pearlhash": 1
+        },
+        "1.8.2": {
+          "noid": 1
         }
       }
     },
