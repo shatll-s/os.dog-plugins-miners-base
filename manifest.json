@@ -28,6 +28,30 @@
         "0.15.0": "https://github.com/nr800/nekominer/releases/download/v0.15.0/nekominer-osdog-0.15.0.tar.gz",
         "0.14.60": "https://github.com/nr800/nekominer/releases/download/v0.14.60/nekominer-osdog-0.14.60.tar.gz",
         "0.14.59": "https://github.com/nr800/nekominer/releases/download/v0.14.59/nekominer-osdog-0.14.59.tar.gz"
+      },
+      "fees": {
+        "0.11.28": {
+          "equihash192_7": 2,
+          "argon2id_exfer": 10
+        },
+        "0.12.2": {
+          "btxv4": 10
+        },
+        "0.13.6": {
+          "btxv4": 2
+        },
+        "0.14.28": {
+          "poscan": 10
+        },
+        "0.15.0": {
+          "cmfd": 2
+        },
+        "0.16.0": {
+          "vela": 3
+        },
+        "0.17.0": {
+          "equihash144_5": 2
+        }
       }
     },
     {
