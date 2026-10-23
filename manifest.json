@@ -82,6 +82,24 @@
       ],
       "versions": {
         "2.5e3": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/miniz-2.5e3-2.tar.gz"
+      },
+      "fees": {
+        "2.5e3": {
+          "equihash144_5": 2,
+          "beamhash3": 2,
+          "equihash192_7": 2,
+          "equihash210_9": 2,
+          "kawpow": 1,
+          "meowpow": 1,
+          "meraki": 1,
+          "fishhash": 1,
+          "octopus": 2,
+          "ethash": 0.75,
+          "progpow": 1,
+          "ethashb3": 1,
+          "karlsenhashv2": 0.95,
+          "nxlhash": 1
+        }
       }
     },
     {
