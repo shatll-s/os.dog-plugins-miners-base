@@ -137,6 +137,48 @@
       "versions": {
         "1.98a": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/lolminer-1.98a.tar.gz",
         "1.66": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/lolminer-1.66.tar.gz"
+      },
+      "fees": {
+        "1.66": {
+          "ethash": 0.7,
+          "etchash": 0.7,
+          "autolykos2": 1.5,
+          "beamhash3": 1,
+          "equihash144_5": 1,
+          "aleph": 0.75,
+          "cuckoocycle": 2,
+          "cuckaroo30": 2.5,
+          "cuckatoo31": 2,
+          "cuckatoo32": 2,
+          "equihash192_7": 1,
+          "equihash210_9": 1
+        },
+        "1.69": {
+          "nexa": 2
+        },
+        "1.78": {
+          "radiant": 0.75,
+          "ethashb3": 1
+        },
+        "1.82": {
+          "pyrinhash": 1
+        },
+        "1.86": {
+          "sha256ton": 1
+        },
+        "1.87": {
+          "fishhash": 1
+        },
+        "1.90": {
+          "karlsenhashv2": 1,
+          "pyrinhashv2": 1
+        },
+        "1.93": {
+          "octopus": 2
+        },
+        "1.97": {
+          "sha3x": 1
+        }
       }
     },
     {
