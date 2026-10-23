@@ -434,6 +434,41 @@
       ],
       "versions": {
         "6.26.0": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/xmrig-6.26.0.tar.gz"
+      },
+      "fees": {
+        "6.26.0": {
+          "cryptonight": 0,
+          "cryptonight_v7": 0,
+          "cryptonight_v8": 0,
+          "cryptonight_r": 0,
+          "cn/fast": 0,
+          "cn/half": 0,
+          "cn/xao": 0,
+          "cn/rto": 0,
+          "cn/rwz": 0,
+          "cn/zls": 0,
+          "cn/double": 0,
+          "cn/ccx": 0,
+          "cn-lite/0": 0,
+          "cn-lite/1": 0,
+          "cn-heavy/0": 0,
+          "cn-heavy/tube": 0,
+          "cn-heavy/xhv": 0,
+          "cryptonight_turtle": 0,
+          "cn-pico/tlo": 0,
+          "cryptonight_upx2": 0,
+          "randomx": 0,
+          "randomxv2": 0,
+          "randomwow": 0,
+          "randomarq": 0,
+          "randomgraft": 0,
+          "randomsfx": 0,
+          "randomyada": 0,
+          "argon2/chukwa": 0,
+          "argon2/chukwav2": 0,
+          "argon2/ninja": 0,
+          "ghostrider": 0
+        }
       }
     },
     {
