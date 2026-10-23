@@ -544,6 +544,42 @@
         "100.50": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/bzminer-100.50.tar.gz",
         "100.46": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/bzminer-100.46.tar.gz",
         "100.45": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/bzminer-100.45.tar.gz"
+      },
+      "fees": {
+        "100.45": {
+          "c29": 1,
+          "cn-heavy/0": 1,
+          "cn-heavy/xhv": 1,
+          "cn-lite/0": 1,
+          "cn-lite/1": 1,
+          "cryptonight_turtle": 1,
+          "cn-pico/tlo": 1,
+          "cryptonight": 1,
+          "cryptonight_v7": 1,
+          "cryptonight_v8": 1,
+          "cn/ccx": 1,
+          "cn/double": 1,
+          "cn/fast": 1,
+          "cryptonight_gpu": 1,
+          "cn/half": 1,
+          "cn/rto": 1,
+          "cn/rwz": 1,
+          "cryptonight_upx2": 1,
+          "cn/xao": 1,
+          "cn/zls": 1,
+          "autolykos2": 1,
+          "etchash": 0.5,
+          "ethash": 0.5,
+          "kawpow": 1,
+          "nexa": 2,
+          "pearlhash": 2,
+          "quantus": 2,
+          "randomx": 1,
+          "sha256d": 0,
+          "verushash": 1,
+          "janushash": 2,
+          "xelishashv3": 1
+        }
       }
     }
   ]
