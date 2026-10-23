@@ -302,6 +302,97 @@
         "3.2.9": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.2.9.tar.gz",
         "3.2.4": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.2.4.tar.gz",
         "3.2.3b": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/srbminer-3.2.3b.tar.gz"
+      },
+      "fees": {
+        "3.2.3": {
+          "ethash": 0.65,
+          "etchash": 0.65,
+          "autolykos2": 1,
+          "kawpow": 0.85,
+          "meowpow": 0.85,
+          "fishhash": 0.85,
+          "heavyhash": 0.85,
+          "blake3_decred": 1,
+          "verthash": 1,
+          "firopow": 0.85,
+          "evrprogpow": 0.85,
+          "xelishashv3": 1.5,
+          "phihash": 0.85,
+          "qhash": 1.5,
+          "xhash": 3,
+          "progpow_epic": 0.85,
+          "progpow_zano": 0.85,
+          "cryptonight_gpu": 0.85,
+          "cryptonight_turtle": 0.85,
+          "argon2d_16000": 0.85,
+          "argon2d_dynamic": 0.85,
+          "curvehash": 0.85,
+          "lyra2v2_webchain": 0.85,
+          "yescrypt": 0.85,
+          "yescryptr8": 0.85,
+          "yescryptr16": 0.85,
+          "yescryptr32": 0.85,
+          "yespower": 0.85,
+          "yespowertide": 0.85,
+          "randomx": 0.85,
+          "cpupower": 0.85,
+          "flex": 2,
+          "ghostrider": 0.85,
+          "mike": 0.85,
+          "minotaurx": 0.85,
+          "panthera": 0.85,
+          "randomalpha": 1,
+          "randomarq": 0.85,
+          "randomc64": 0.85,
+          "randomepic": 0.85,
+          "randomjuno": 0.85,
+          "randomscash": 0.85,
+          "randomsnap": 0.85,
+          "randomvirel": 0.85,
+          "randomy": 1,
+          "randomyada": 0.85,
+          "rinhash": 1,
+          "verushash": 0.85,
+          "yespower2b": 0.85,
+          "yespoweradvc": 0.85,
+          "yespowereqpay": 2,
+          "yespowerinterchained": 0.85,
+          "yespowerltncg": 0.85,
+          "yespowermgpc": 0.85,
+          "yespowermwc": 0.85,
+          "yespowerr16": 0.85,
+          "yespowersugar": 0.85,
+          "yespowerurx": 0
+        },
+        "3.3.1": {
+          "pearlhash": 3
+        },
+        "3.3.6": {
+          "oggpow": 0.85
+        },
+        "3.4.1": {
+          "pearlhash": 2
+        },
+        "3.5.6": {
+          "randompcn": 0.85,
+          "randomzqvx": 0.85
+        },
+        "3.5.7": {
+          "randomdrgx": 0.85
+        },
+        "3.5.8": {
+          "sha256d_csd": 1
+        },
+        "3.6.3": {
+          "noid": 3
+        },
+        "3.6.4": {
+          "quantus": 2.5
+        },
+        "3.6.7": {
+          "noid": 2,
+          "quantus": 2
+        }
       }
     },
     {
