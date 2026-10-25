@@ -6,7 +6,7 @@
     {
       "id": "nekominer",
       "name": "nekominer",
-      "latest": "0.19.1",
+      "latest": "0.19.3",
       "algos": [
         { "g": "quantus", "i": "quantus" },
         { "g": "btxv4", "i": "btxv4" },
@@ -19,6 +19,7 @@
         { "g": "sha3_256", "i": "sha3_256" }
       ],
       "versions": {
+        "0.19.3": "https://github.com/nr800/nekominer/releases/download/v0.19.3/nekominer-osdog-0.19.3.tar.gz",
         "0.19.1": "https://github.com/nr800/nekominer/releases/download/v0.19.1/nekominer-osdog-0.19.1.tar.gz",
         "0.18.1": "https://github.com/nr800/nekominer/releases/download/v0.18.1/nekominer-osdog-0.18.1.tar.gz",
         "0.18.0": "https://github.com/nr800/nekominer/releases/download/v0.18.0/nekominer-osdog-0.18.0.tar.gz",
