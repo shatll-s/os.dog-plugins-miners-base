@@ -533,7 +533,7 @@
     {
       "id": "bzminer",
       "name": "BzMiner",
-      "latest": "100.70",
+      "latest": "100.80",
       "algos": [
         { "g": "c29", "i": "c29" },
         { "g": "cn-heavy/0", "i": "cn-heavy/0" },
@@ -569,6 +569,7 @@
         { "g": "xelishashv3", "i": "xelis" }
       ],
       "versions": {
+        "100.80": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/bzminer-100.80.tar.gz",
         "100.70": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/bzminer-100.70.tar.gz",
         "100.60": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/bzminer-100.60.tar.gz",
         "100.52": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/bzminer-100.52.tar.gz",
