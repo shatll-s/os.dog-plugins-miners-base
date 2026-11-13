@@ -274,3 +274,17 @@ Both `miner` and `stats` receive a profile path as `$1`:
 | `coin` | Coin ticker |
 | `api_port` | Local API port for stats collection |
 | `extra` | Arbitrary extra data |
+
+### rgminer
+
+rgminer is registered as a regular miner, with 1.1.5 as the latest version.
+Algorithm mappings are `pearlhash` → `pearl`, `memhash` → `memhash` and
+`argon2id_exfer` → `exfer-argon2id`. The launcher reads `.algo` from the slot
+profile; no `--algo` in `.addition` is needed. Statistics report the global
+algorithm name. Device selection and other extra flags go in `.addition`.
+The comma-separated `.pool` value is passed through for native failover.
+
+The 1.1.5 install archive in `releases/` contains the binary, launcher, stats
+adapter and `files.md5`. Rebuild it with
+`python3 .github/scripts/package_rgminer.py` using the binary and adapters
+in `miners/rgminer/`.

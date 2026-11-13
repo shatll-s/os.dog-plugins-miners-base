@@ -53,6 +53,34 @@ def stats(miner, responses):
                               capture_output=True, text=True, timeout=10)
 
 
+class RgminerTests(unittest.TestCase):
+    def test_profile_algorithm_and_pci_mapping(self):
+        payload = {"miners": [
+            {"emaRate": 120.9, "acceptedShares": 3, "rejectedShares": 1,
+             "pciBusId": "0000:0E:00.0"},
+            {"emaRate": 80.2, "acceptedShares": 2, "pciBusId": "0000:03:00.0"}]}
+        for native, global_name in (("pearl", "pearlhash"), ("memhash", "memhash"),
+                                    ("exfer-argon2id", "argon2id_exfer")):
+            with self.subTest(algo=native), api({"/metrics": payload}) as port, tempfile.TemporaryDirectory() as tmp:
+                profile = Path(tmp) / "profile.json"
+                profile.write_text(json.dumps({"api_port": port, "algo": native, "fork": "1.1.5"}))
+                result = subprocess.run([str(ROOT / "miners/rgminer/stats"), str(profile)],
+                                        capture_output=True, text=True, timeout=10)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                data = json.loads(result.stdout)
+                self.assertEqual(data["algo"], global_name)
+                self.assertEqual(data["busid"], {"0": "0e", "1": "03"})
+                self.assertEqual(data["total_hr"], "201")
+                self.assertEqual(data["hr"], [120, 80])
+                self.assertEqual(data["total_badshare"], "1")
+
+    def test_empty_and_invalid_api(self):
+        result = stats("rgminer", {"/metrics": {"miners": []}})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["total_hr"], "0")
+        self.assertNotEqual(stats("rgminer", {"/metrics": {"error": "unavailable"}}).returncode, 0)
+
+
 class AlgorithmTests(unittest.TestCase):
     def test_reconcile_removes_obsolete_and_keeps_mapping(self):
         existing = [{"g": "custom_name", "i": "kept"}, {"g": "old", "i": "removed"}]
@@ -367,7 +395,7 @@ class PackageTests(unittest.TestCase):
     def test_release_checksums_and_source_match_repository(self):
         import tarfile
         manifest = json.loads((ROOT / "manifest.json").read_text())
-        for miner in ("xmrig", "onezerominer", "bzminer"):
+        for miner in ("xmrig", "onezerominer", "bzminer", "rgminer"):
             entry = next(m for m in manifest["miners"] if m["id"] == miner)
             with self.subTest(miner=miner), tarfile.open(ROOT / "releases" / f"{miner}-{entry['latest']}.tar.gz") as tar:
                 allowed = {"./miner", "./stats", "./" + miner, "./files.md5"}

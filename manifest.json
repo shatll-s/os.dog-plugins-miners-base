@@ -4,6 +4,19 @@
   "label": "base",
   "miners": [
     {
+      "id": "rgminer",
+      "name": "rgminer",
+      "latest": "1.1.5",
+      "algos": [
+        { "g": "pearlhash", "i": "pearl" },
+        { "g": "memhash", "i": "memhash" },
+        { "g": "argon2id_exfer", "i": "exfer-argon2id" }
+      ],
+      "versions": {
+        "1.1.5": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/rgminer-1.1.5.tar.gz"
+      }
+    },
+    {
       "id": "nekominer",
       "name": "nekominer",
       "latest": "0.19.3",

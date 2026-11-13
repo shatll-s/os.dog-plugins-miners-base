@@ -1,0 +1,27 @@
+#!/bin/bash
+set -euo pipefail
+
+PROFILE="${1:-}"
+[[ -n "$PROFILE" && -f "$PROFILE" ]] || { echo "Usage: $0 <profile.json>"; exit 1; }
+PROFILE=$(realpath "$PROFILE")
+cd "$(dirname "$0")"
+ALGO=$(jq -r '.algo // empty' "$PROFILE")
+POOL=$(jq -r '.pool // empty' "$PROFILE")
+TEMPLATE=$(jq -r '.template // .wallet // empty' "$PROFILE")
+API_PORT=$(jq -r '.api_port // empty' "$PROFILE")
+ADDITION=$(jq -r '.addition // empty' "$PROFILE")
+[[ -n "$ALGO" && -n "$POOL" && -n "$TEMPLATE" && "$API_PORT" =~ ^[0-9]+$ ]] || { echo "algo, pool, template and api_port are required"; exit 1; }
+
+# The manifest maps the global names to these native parameters.
+case "$ALGO" in
+    pearlhash) ALGO=pearl ;;
+    argon2id_exfer) ALGO=exfer-argon2id ;;
+esac
+export CUDA_DEVICE_ORDER=PCI_BUS_ID
+mkdir -p /var/log/osdog/miners
+args=(--algo "$ALGO" --stratum "$POOL" --wallet "$TEMPLATE" --api-host 127.0.0.1 --api-port "$API_PORT")
+extra=()
+ADDITION="${ADDITION%%#*}"
+read -r -a extra <<< "$ADDITION"
+echo "> Starting rgminer"
+./rgminer "${args[@]}" "${extra[@]}" 2>&1 | tee /var/log/osdog/miners/rgminer.log
