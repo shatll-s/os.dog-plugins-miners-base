@@ -34,23 +34,19 @@ cd `dirname $0`
 PROFILE="$1"
 [[ -z "$PROFILE" || ! -f "$PROFILE" ]] && echo -e "${RED}Usage: $0 <profile.json>${WHITE}" && exit 1
 
-# Read fields from profile
-ALGO=$(jq -r '.algo // empty' "$PROFILE")
-PASS=$(jq -r '.pass // empty' "$PROFILE")
-POOL=$(jq -r '.pool // empty' "$PROFILE")
-TEMPLATE=$(jq -r '.template // empty' "$PROFILE")
-API_PORT=$(jq -r '.api_port // empty' "$PROFILE")
-ADDITION=$(jq -r '.addition // empty' "$PROFILE")
+# Read common fields and split addition into an argument array.
+. ./profile.sh
+load_profile
 
 LOG="/dog/log/<miner_id>.log"
 
 # Build and run command
 batch="./<binary>"
 # ... add miner-specific flags ...
-batch+=" $ADDITION"
+
 
 echo -e "${GREEN}> Starting <miner_name>: $batch${WHITE}"
-unbuffer $batch 2>&1 | tee $LOG
+unbuffer $batch "${extra[@]}" 2>&1 | tee $LOG
 ```
 
 ### 3. Create `stats` script
@@ -99,13 +95,13 @@ From the miner's directory:
 ```bash
 cd miners/<miner_id>
 rm -f files.md5 miner.tar.gz
-find . -type f ! -name "files.md5" -exec md5sum {} \; > files.md5
-tar -zcf miner.tar.gz *
+find -L . -type f ! -name "files.md5" -exec md5sum {} \; > files.md5
+tar -zhcf miner.tar.gz *
 rm -f files.md5
 mv miner.tar.gz ../../releases/<miner_id>-<version>.tar.gz
 ```
 
-The archive will contain `miner`, `stats`, the binary, and `files.md5` (checksums for integrity verification).
+Create `profile.sh` as a symlink to `../../common/profile.sh` in the miner directory. The archive must contain its resolved contents and include it in `files.md5`.
 
 ### 5. Register in manifest.json
 
@@ -208,7 +204,7 @@ The new launchers accept the same slot profile as the existing miners.
 evaluation. Statistics describe the first algorithm; CPU work is included in
 totals but CPU threads are not reported as GPU devices.
 
-Install archives contain only the launcher, stats adapter, binary,
+Install archives contain only the launcher, shared profile reader, stats adapter, binary,
 `files.md5` and redistribution license notices. Build documentation and
 modified source are kept separately from the installed miner.
 
@@ -288,3 +284,8 @@ The 1.1.5 install archive in `releases/` contains the binary, launcher, stats
 adapter and `files.md5`. Rebuild it with
 `python3 .github/scripts/package_rgminer.py` using the binary and adapters
 in `miners/rgminer/`.
+
+Local launchers use `common/profile.sh` for slot fields and whitespace-separated
+`addition` arguments, including line breaks. Each archive includes a standalone
+copy of this file. NekoMiner uses its upstream-maintained launcher. XMRig is
+built without donations; its scheduled workflow also supports manual dry runs.

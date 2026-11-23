@@ -12,15 +12,15 @@ def package(version):
     source = ROOT / "miners" / "rgminer"
     with tempfile.TemporaryDirectory() as tmp:
         stage = Path(tmp)
-        for name in ("miner", "stats", "rgminer"):
+        for name in ("miner", "stats", "rgminer", "profile.sh"):
             shutil.copy2(source / name, stage / name)
         for name in ("miner", "stats", "rgminer"):
             (stage / name).chmod(0o755)
         (stage / "files.md5").write_text("".join(
             f"{hashlib.md5((stage / name).read_bytes()).hexdigest()}  ./{name}\n"
-            for name in ("miner", "stats", "rgminer")))
+            for name in ("miner", "stats", "rgminer", "profile.sh")))
         with tarfile.open(ROOT / "releases" / f"rgminer-{version}.tar.gz", "w:gz") as archive:
-            for name in ("miner", "stats", "rgminer", "files.md5"):
+            for name in ("miner", "stats", "rgminer", "profile.sh", "files.md5"):
                 archive.add(stage / name, arcname="./" + name)
 
 

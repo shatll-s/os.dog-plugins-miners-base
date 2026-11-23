@@ -106,9 +106,9 @@ jobs:
         run: |
           set -euo pipefail
           cd miners/srbminer
-          md5sum ./miner ./stats ./SRBMiner-MULTI > files.md5
-          tar -czf "../../releases/srbminer-${TARGET}.tar.gz" \
-            --transform 's,^,./,' miner stats SRBMiner-MULTI files.md5
+          md5sum ./miner ./stats ./SRBMiner-MULTI ./profile.sh > files.md5
+          tar -chzf "../../releases/srbminer-${TARGET}.tar.gz" \
+            --transform 's,^,./,' miner stats SRBMiner-MULTI profile.sh files.md5
           rm files.md5
           echo "Archive contents:"; tar -tzf "../../releases/srbminer-${TARGET}.tar.gz"
 

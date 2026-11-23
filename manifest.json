@@ -452,7 +452,7 @@
     {
       "id": "xmrig",
       "name": "XMRig",
-      "latest": "6.26.0",
+      "latest": "6.27.0",
       "algos": [
         { "g": "cryptonight", "i": "cn/0" },
         { "g": "cryptonight_v7", "i": "cn/1" },
@@ -487,6 +487,7 @@
         { "g": "ghostrider", "i": "ghostrider" }
       ],
       "versions": {
+        "6.27.0": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/xmrig-6.27.0.tar.gz",
         "6.26.0": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/xmrig-6.26.0.tar.gz"
       },
       "fees": {
