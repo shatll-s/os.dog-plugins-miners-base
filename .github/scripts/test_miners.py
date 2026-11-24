@@ -321,6 +321,19 @@ class StatsTests(unittest.TestCase):
 
 
 class PackageTests(unittest.TestCase):
+    def test_nekominer_auto_update_does_not_downgrade_manual_release(self):
+        import build_release
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest = root / "manifest.json"
+            original = json.dumps({"miners": [{"id": "nekominer", "latest": "0.21.4", "versions": {}}]})
+            manifest.write_text(original)
+            release = root / "release.json"
+            release.write_text(json.dumps({"tag_name": "v0.21.0", "assets": []}))
+            with patch.object(build_release, "ROOT", root):
+                build_release.build("nekominer", release_file=release)
+            self.assertEqual(manifest.read_text(), original)
+
     def test_corrupt_upstream_archive_does_not_mutate_manifest(self):
         import build_release
         with tempfile.TemporaryDirectory() as tmp:
