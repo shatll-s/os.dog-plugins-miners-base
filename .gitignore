@@ -1,0 +1,8 @@
+/.codex-sandbox/
+/.claude-sandbox/
+/.claude/
+/.idea/
+/.github/scripts/build_xmrig.sh
+/Autotune/
+/Cache/
+/*.sh

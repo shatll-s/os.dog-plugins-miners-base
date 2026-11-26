@@ -34,23 +34,18 @@ cd `dirname $0`
 PROFILE="$1"
 [[ -z "$PROFILE" || ! -f "$PROFILE" ]] && echo -e "${RED}Usage: $0 <profile.json>${WHITE}" && exit 1
 
-# Read fields from profile
-ALGO=$(jq -r '.algo // empty' "$PROFILE")
-PASS=$(jq -r '.pass // empty' "$PROFILE")
-POOL=$(jq -r '.pool // empty' "$PROFILE")
-TEMPLATE=$(jq -r '.template // empty' "$PROFILE")
-API_PORT=$(jq -r '.api_port // empty' "$PROFILE")
-ADDITION=$(jq -r '.addition // empty' "$PROFILE")
+# Read common profile fields and split addition into the extra array.
+. ./profile.sh
+load_profile
 
 LOG="/dog/log/<miner_id>.log"
 
 # Build and run command
 batch="./<binary>"
 # ... add miner-specific flags ...
-batch+=" $ADDITION"
 
 echo -e "${GREEN}> Starting <miner_name>: $batch${WHITE}"
-unbuffer $batch 2>&1 | tee $LOG
+unbuffer $batch "${extra[@]}" 2>&1 | tee $LOG
 ```
 
 ### 3. Create `stats` script
@@ -99,13 +94,15 @@ From the miner's directory:
 ```bash
 cd miners/<miner_id>
 rm -f files.md5 miner.tar.gz
-find . -type f ! -name "files.md5" -exec md5sum {} \; > files.md5
-tar -zcf miner.tar.gz *
+find -L . -type f ! -name "files.md5" -exec md5sum {} \; > files.md5
+tar -zhcf miner.tar.gz *
 rm -f files.md5
 mv miner.tar.gz ../../releases/<miner_id>-<version>.tar.gz
 ```
 
-The archive will contain `miner`, `stats`, the binary, and `files.md5` (checksums for integrity verification).
+Add a `profile.sh` symlink to `../../common/profile.sh` in each local miner
+directory. The archive must contain the resolved file, not the symlink, so it
+can run independently. `files.md5` must include `profile.sh` as well.
 
 ### 5. Register in manifest.json
 
@@ -157,40 +154,29 @@ supported, adds new parameters and removes unsupported ones. BzMiner uses
 help and the active README table: 1.7.8's help omits the supported `pearlhash`.
 SRBMiner includes its CPU algorithms as well as GPU algorithms.
 
-XMRig 6.26.0 is built from source with default and minimum donation levels
-set to zero. Modified source is in `releases/xmrig-6.26.0-source.tar.gz`;
-see the rebuild instructions below.
+XMRig 6.27.0 is built from the upstream [v6.27.0 source](https://github.com/xmrig/xmrig/archive/refs/tags/v6.27.0.tar.gz)
+(SHA-256 `4cf0895edae1e32042c8c0103c4a9d1fa3b3a0bf8a81ce7733ad6539514b48f0`)
+with `kDefaultDonateLevel` and `kMinimumDonateLevel` in `src/donate.h` set to
+zero. The build also uses [hwloc 2.12.1 source](https://download.open-mpi.org/release/hwloc/v2.12/hwloc-2.12.1.tar.gz)
+(SHA-256 `ffa02c3a308275a9339fbe92add054fac8e9a00cb8fe8c53340094012cb7c633`).
 
 The new launchers accept the same slot profile as the existing miners.
 `addition` is split on whitespace into extra CLI arguments, without shell
 evaluation. Statistics describe the first algorithm; CPU work is included in
 totals but CPU threads are not reported as GPU devices.
 
-Install archives contain only the launcher, stats adapter, binary,
-`files.md5` and redistribution license notices. Build documentation and
-modified source are kept separately from the installed miner.
+For every locally maintained miner launcher, `addition` may contain multiple
+lines: spaces, tabs and line breaks separate arguments. New launchers must
+preserve this behavior. In profile JSON, encode a line break as `\n`. For
+example, `"addition": "--flag-one\n--flag-two value"` passes three arguments.
+Shell quoting is not interpreted, so quotes do not combine words into one
+argument. NekoMiner is distributed as an upstream-maintained package and its
+launcher may behave differently.
 
-### Rebuilding XMRig
+Install archives contain only the launcher, shared profile reader, stats adapter, binary,
+`files.md5` and redistribution license notices.
 
-The upstream tag is `v6.26.0`. The only code change is in `src/donate.h`:
-`kDefaultDonateLevel` and `kMinimumDonateLevel` are changed from 1 to 0.
-The launcher also sets `--donate-level 0 --donate-over-proxy 0`.
-
-The complete modified source, upstream GPL-3.0 license and hwloc dependency
-source are in `releases/xmrig-6.26.0-source.tar.gz`. The upstream source
-archive SHA-256 before modification is
-`bebb05cd95bc43e3d40b02abb98ea8680e68f2cb1c8bdaf442bde8f914c924ee`;
-the hwloc 2.12.1 archive SHA-256 is
-`ffa02c3a308275a9339fbe92add054fac8e9a00cb8fe8c53340094012cb7c633`.
-
-On Ubuntu 24.04 x86_64, from the repository root:
-
-```bash
-sudo apt-get install build-essential cmake libuv1-dev libssl-dev
-bash .github/scripts/build_xmrig.sh
-```
-
-The script rebuilds the binary and install archive. It uses static libuv
+The XMRig binary uses static libuv
 1.48.0, OpenSSL 3.0.13 and hwloc 2.12.1 with CPU, TLS and HTTP API support.
 It does not use `-march=native`. Upstream disables OpenCL and CUDA for fully
 static Linux binaries; KawPow is disabled because it requires a GPU backend.

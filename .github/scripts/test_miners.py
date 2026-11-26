@@ -4,7 +4,9 @@ import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import io
 import json
+import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import threading
@@ -15,6 +17,48 @@ from miner_algorithms import parse_bz_algos, parse_neko_readme, parse_onezero_he
 from update_manifest import reconcile as reconcile_srb
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+class LauncherTests(unittest.TestCase):
+    def test_addition_accepts_multiple_lines(self):
+        binaries = {"xmrig": "xmrig", "bzminer": "bzminer", "onezerominer": "onezerominer",
+                    "lolminer": "lolMiner", "miniz": "miniZ", "srbminer": "SRBMiner-MULTI"}
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            bindir = root / "bin"
+            bindir.mkdir()
+            jq = bindir / "jq"
+            jq.write_text('#!/usr/bin/env python3\nimport json, sys\n'
+                          'd = json.load(open(sys.argv[-1]))\n'
+                          'keys = [s.strip().lstrip(".") for s in sys.argv[2].split("//") if s.strip() != "empty"]\n'
+                          'print(next((d[k] for k in keys if d.get(k)), ""))\n')
+            jq.chmod(0o755)
+            for name, script in {"unbuffer": '#!/bin/sh\nexec "$@"\n',
+                                 "tee": '#!/bin/sh\ncat\n',
+                                 "mkdir": '#!/bin/sh\nexit 0\n'}.items():
+                path = bindir / name
+                path.write_text(script)
+                path.chmod(0o755)
+            profile = root / "profile.json"
+            profile.write_text(json.dumps({"pool": "pool:123", "template": "wallet", "algo": "rx/0",
+                                           "api_port": 1234, "addition": "--first one\n\n--second two\t--third three"}))
+            env = dict(os.environ, PATH=str(bindir) + os.pathsep + os.environ["PATH"])
+            for miner, binary in binaries.items():
+                with self.subTest(miner=miner):
+                    directory = root / miner
+                    directory.mkdir()
+                    shutil.copy(ROOT / "miners" / miner / "miner", directory / "miner")
+                    shutil.copy(ROOT / "common" / "profile.sh", directory / "profile.sh")
+                    executable = directory / binary
+                    executable.write_text('#!/usr/bin/env python3\nimport json, sys\nprint(json.dumps(sys.argv[1:]))\n')
+                    executable.chmod(0o755)
+                    result = subprocess.run([str(directory / "miner"), str(profile)], env=env,
+                                            capture_output=True, text=True, timeout=10)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    args = json.loads(result.stdout.splitlines()[-1])
+                    start = args.index("--first")
+                    self.assertEqual(args[start:start + 6],
+                                     ["--first", "one", "--second", "two", "--third", "three"])
 
 
 @contextlib.contextmanager
@@ -171,6 +215,19 @@ class StatsTests(unittest.TestCase):
 
 
 class PackageTests(unittest.TestCase):
+    def test_nekominer_auto_update_does_not_downgrade_manual_release(self):
+        import build_release
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest = root / "manifest.json"
+            original = json.dumps({"miners": [{"id": "nekominer", "latest": "0.21.4", "versions": {}}]})
+            manifest.write_text(original)
+            release = root / "release.json"
+            release.write_text(json.dumps({"tag_name": "v0.21.0", "assets": []}))
+            with patch.object(build_release, "ROOT", root):
+                build_release.build("nekominer", release_file=release)
+            self.assertEqual(manifest.read_text(), original)
+
     def test_corrupt_upstream_archive_does_not_mutate_manifest(self):
         import build_release
         with tempfile.TemporaryDirectory() as tmp:
@@ -194,6 +251,8 @@ class PackageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "miners/onezerominer").mkdir(parents=True)
+            (root / "common").mkdir()
+            shutil.copy(ROOT / "common/profile.sh", root / "common/profile.sh")
             (root / "releases").mkdir()
             for name in ("miner", "stats"):
                 (root / "miners/onezerominer" / name).write_text("#!/bin/bash\n")
@@ -282,7 +341,7 @@ class PackageTests(unittest.TestCase):
         for miner in ("xmrig", "onezerominer", "bzminer"):
             entry = next(m for m in manifest["miners"] if m["id"] == miner)
             with self.subTest(miner=miner), tarfile.open(ROOT / "releases" / f"{miner}-{entry['latest']}.tar.gz") as tar:
-                allowed = {"./miner", "./stats", "./" + miner, "./files.md5"}
+                allowed = {"./miner", "./stats", "./profile.sh", "./" + miner, "./files.md5"}
                 if miner == "xmrig":
                     allowed.add("./LICENSE")
                 elif miner == "bzminer":

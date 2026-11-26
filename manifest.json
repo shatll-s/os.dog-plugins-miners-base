@@ -6,17 +6,78 @@
     {
       "id": "nekominer",
       "name": "nekominer",
-      "latest": "0.14.60",
+      "latest": "0.21.4",
       "algos": [
+        { "g": "quantus", "i": "quantus" },
         { "g": "btxv4", "i": "btxv4" },
-        { "g": "vecnohash", "i": "vecnohash" },
-        { "g": "equihash192_7", "i": "equihash" },
+        { "g": "equihash192_7", "i": "equihash192_7" },
+        { "g": "equihash144_5", "i": "equihash144_5" },
         { "g": "argon2id_exfer", "i": "exfer" },
-        { "g": "poscan", "i": "poscan" }
+        { "g": "poscan", "i": "poscan" },
+        { "g": "cmfd", "i": "cmfd" },
+        { "g": "vela", "i": "vela" },
+        { "g": "sha3_256", "i": "sha3_256" },
+        { "g": "blake2b_prox", "i": "blake2b_prox" }
       ],
       "versions": {
+        "0.21.4": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/nekominer-0.21.4.tar.gz",
+        "0.21.0": "https://github.com/nr800/nekominer/releases/download/v0.21.0/nekominer-osdog-0.21.0.tar.gz",
+        "0.20.9": "https://github.com/nr800/nekominer/releases/download/v0.20.9/nekominer-osdog-0.20.9.tar.gz",
+        "0.20.6": "https://github.com/nr800/nekominer/releases/download/v0.20.6/nekominer-osdog-0.20.6.tar.gz",
+        "0.20.5": "https://github.com/nr800/nekominer/releases/download/v0.20.5/nekominer-osdog-0.20.5.tar.gz",
+        "0.20.3": "https://github.com/nr800/nekominer/releases/download/v0.20.3/nekominer-osdog-0.20.3.tar.gz",
+        "0.19.6": "https://github.com/nr800/nekominer/releases/download/v0.19.6/nekominer-osdog-0.19.6.tar.gz",
+        "0.19.3": "https://github.com/nr800/nekominer/releases/download/v0.19.3/nekominer-osdog-0.19.3.tar.gz",
+        "0.19.1": "https://github.com/nr800/nekominer/releases/download/v0.19.1/nekominer-osdog-0.19.1.tar.gz",
+        "0.18.1": "https://github.com/nr800/nekominer/releases/download/v0.18.1/nekominer-osdog-0.18.1.tar.gz",
+        "0.18.0": "https://github.com/nr800/nekominer/releases/download/v0.18.0/nekominer-osdog-0.18.0.tar.gz",
+        "0.17.4": "https://github.com/nr800/nekominer/releases/download/v0.17.4/nekominer-osdog-0.17.4.tar.gz",
+        "0.17.3": "https://github.com/nr800/nekominer/releases/download/v0.17.3/nekominer-osdog-0.17.3.tar.gz",
+        "0.17.2": "https://github.com/nr800/nekominer/releases/download/v0.17.2/nekominer-osdog-0.17.2.tar.gz",
+        "0.17.1": "https://github.com/nr800/nekominer/releases/download/v0.17.1/nekominer-osdog-0.17.1.tar.gz",
+        "0.17.0": "https://github.com/nr800/nekominer/releases/download/v0.17.0/nekominer-osdog-0.17.0.tar.gz",
+        "0.16.4": "https://github.com/nr800/nekominer/releases/download/v0.16.4/nekominer-osdog-0.16.4.tar.gz",
+        "0.16.3": "https://github.com/nr800/nekominer/releases/download/v0.16.3/nekominer-osdog-0.16.3.tar.gz",
+        "0.16.0": "https://github.com/nr800/nekominer/releases/download/v0.16.0/nekominer-osdog-0.16.0.tar.gz",
+        "0.15.0": "https://github.com/nr800/nekominer/releases/download/v0.15.0/nekominer-osdog-0.15.0.tar.gz",
         "0.14.60": "https://github.com/nr800/nekominer/releases/download/v0.14.60/nekominer-osdog-0.14.60.tar.gz",
         "0.14.59": "https://github.com/nr800/nekominer/releases/download/v0.14.59/nekominer-osdog-0.14.59.tar.gz"
+      },
+      "fees": {
+        "0.11.28": {
+          "equihash192_7": 2,
+          "argon2id_exfer": 10
+        },
+        "0.12.2": {
+          "btxv4": 10
+        },
+        "0.13.6": {
+          "btxv4": 2
+        },
+        "0.14.28": {
+          "poscan": 10
+        },
+        "0.15.0": {
+          "cmfd": 2
+        },
+        "0.16.0": {
+          "vela": 3
+        },
+        "0.17.0": {
+          "equihash144_5": 2
+        },
+        "0.18.0": {
+          "quantus": 1
+        },
+        "0.19.1": {
+          "sha3_256": 3
+        },
+        "0.19.6": {
+          "sha3_256": 2
+        },
+        "0.20.3": {
+          "blake2b_prox": 1
+        }
       }
     },
     {
@@ -209,7 +270,7 @@
     {
       "id": "xmrig",
       "name": "XMRig",
-      "latest": "6.26.0",
+      "latest": "6.27.0",
       "algos": [
         { "g": "cryptonight", "i": "cn/0" },
         { "g": "cryptonight_v7", "i": "cn/1" },
@@ -244,6 +305,7 @@
         { "g": "ghostrider", "i": "ghostrider" }
       ],
       "versions": {
+        "6.27.0": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/xmrig-6.27.0.tar.gz",
         "6.26.0": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/xmrig-6.26.0.tar.gz"
       }
     },

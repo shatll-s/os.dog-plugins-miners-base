@@ -76,6 +76,12 @@ def build(miner, version=None, release_file=None, archive_file=None, readme_file
     if entry["latest"] == version and not archive_file and not forced:
         print(f"{miner} {version}: already current")
         return
+    if miner == "nekominer" and not forced:
+        upstream = re.fullmatch(r"\d+(?:\.\d+)*", version)
+        installed = re.fullmatch(r"\d+(?:\.\d+)*", entry["latest"])
+        if upstream and installed and tuple(map(int, version.split("."))) < tuple(map(int, entry["latest"].split("."))):
+            print(f"{miner} {version}: upstream is older than installed {entry['latest']}; keeping current")
+            return
     name = ASSETS[miner].format(version)
     asset = next(a for a in release["assets"] if a["name"] == name)
     digest = asset.get("digest") or ""
@@ -153,6 +159,7 @@ def build(miner, version=None, release_file=None, archive_file=None, readme_file
             return
         destination = ROOT / "miners" / miner
         files = {"miner": (destination / "miner").read_bytes(),
+                 "profile.sh": (ROOT / "common" / "profile.sh").read_bytes(),
                  "stats": (destination / "stats").read_bytes(), miner: binary.read_bytes()}
         notices = binary.parent / "THIRD_PARTY_NOTICES.txt"
         if notices.is_file():
