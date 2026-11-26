@@ -1,0 +1,70 @@
+name: XMRig auto-build
+on:
+  schedule:
+    - cron: '7-59/10 * * * *'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build; blank uses latest stable'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Build without committing or pushing'
+        required: false
+        default: 'false'
+permissions:
+  contents: write
+concurrency:
+  group: base-miners-autobuild
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED: ${{ github.event.inputs.version || '' }}
+        run: |
+          set -euo pipefail
+          VERSION="$REQUESTED"
+          if [ -z "$VERSION" ]; then VERSION=$(gh api repos/xmrig/xmrig/releases/latest --jq '.tag_name | ltrimstr("v")'); fi
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          CURRENT=$(jq -r '.miners[] | select(.id == "xmrig") | .latest' manifest.json)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [ "$VERSION" = "$CURRENT" ] && [ -z "$REQUESTED" ]; then echo 'build=false' >> "$GITHUB_OUTPUT"; else echo 'build=true' >> "$GITHUB_OUTPUT"; fi
+      - name: Install build dependencies
+        if: steps.release.outputs.build == 'true'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq build-essential cmake libuv1-dev libssl-dev
+      - name: Build and test
+        if: steps.release.outputs.build == 'true'
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          .github/scripts/build_xmrig.sh "$VERSION"
+          bash -n miners/xmrig/miner miners/xmrig/stats common/profile.sh
+          python3 .github/scripts/test_miners.py
+          git diff --check
+      - name: Publish
+        if: steps.release.outputs.build == 'true' && github.event.inputs.dry_run != 'true'
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          git add manifest.json miners/xmrig/xmrig miners/xmrig/LICENSE "releases/xmrig-$VERSION.tar.gz"
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "Auto-build XMRig $VERSION"
+          git push
+      - name: Upload dry-run package
+        if: steps.release.outputs.build == 'true' && github.event.inputs.dry_run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: xmrig-package
+          path: |
+            manifest.json
+            releases/xmrig-${{ steps.release.outputs.version }}.tar.gz

@@ -34,7 +34,7 @@ cd `dirname $0`
 PROFILE="$1"
 [[ -z "$PROFILE" || ! -f "$PROFILE" ]] && echo -e "${RED}Usage: $0 <profile.json>${WHITE}" && exit 1
 
-# Read common profile fields and split addition into the extra array.
+# Read common fields and split addition into an argument array.
 . ./profile.sh
 load_profile
 
@@ -43,6 +43,7 @@ LOG="/dog/log/<miner_id>.log"
 # Build and run command
 batch="./<binary>"
 # ... add miner-specific flags ...
+
 
 echo -e "${GREEN}> Starting <miner_name>: $batch${WHITE}"
 unbuffer $batch "${extra[@]}" 2>&1 | tee $LOG
@@ -100,9 +101,7 @@ rm -f files.md5
 mv miner.tar.gz ../../releases/<miner_id>-<version>.tar.gz
 ```
 
-Add a `profile.sh` symlink to `../../common/profile.sh` in each local miner
-directory. The archive must contain the resolved file, not the symlink, so it
-can run independently. `files.md5` must include `profile.sh` as well.
+Create `profile.sh` as a symlink to `../../common/profile.sh` in the miner directory. The archive must contain its resolved contents and include it in `files.md5`.
 
 ### 5. Register in manifest.json
 
@@ -123,6 +122,11 @@ Add an entry to the `miners` array:
       ],
       "versions": {
         "<version>": "https://raw.githubusercontent.com/.../releases/<miner_id>-<version>.tar.gz"
+      },
+      "fees": {
+        "<from_version>": {
+          "<system_algo_name>": <percent>
+        }
       }
     }
   ]
@@ -132,6 +136,43 @@ Add an entry to the `miners` array:
 Manifest fields:
 - `algos` — list of supported algorithms for the **latest** version. `g` is the algorithm name in the os.dog system, `i` is the parameter passed to this specific miner implementation
 - `versions` — map of version → archive URL (latest version first)
+- `fees` — optional dev fees by version, see below
+
+### Dev fees
+
+`fees` maps a version to the dev fees that apply **from that version on**, by
+system algorithm name (`g`, not `i`). A fee is a percentage in [0, 100):
+`0.65` means 0.65%.
+
+```json
+"fees": {
+  "0.17.0": { "btxv4": 3, "equihash144_5": 2 },
+  "0.17.1": { "btxv4": 1 },
+  "0.17.5": { "btxv4": null }
+}
+```
+
+For version V and algorithm A, take the newest key not newer than V whose
+record lists A; each algorithm is looked up on its own and a record never
+applies to older versions. Above, 0.17.4 pays 1% on btxv4 and 2% on
+equihash144_5, 0.16.4 pays an unknown fee on both, and 0.17.5 pays an unknown
+fee on btxv4 and 2% on equihash144_5. `null` means "unknown from this version
+on". No record, or no `fees` at all, means unknown, which is not 0%. The key
+`"0"` means "since the first version"; use it only when the fee has never
+changed.
+
+Versions compare by their groups of digits (as numbers) and of letters (as
+text). Separators (`.`, `-`, `_`) and a leading `v` are ignored, trailing zero
+groups don't count (`1.2` = `1.2.0`), and a version is newer than its own
+prefix (`1.98` < `1.98a`, `2.5e` < `2.5e3`).
+
+The auto-builds keep `fees` current: when a release states a fee that differs
+from the one in force, they add a record for that version. SRBMiner's fees
+come from its `--list-algorithms`, BzMiner's from `--list-algos`, nekominer's
+and OneZeroMiner's from the README table of the release. lolMiner, miniZ and
+XMRig are packaged by hand, and so are their records: take fees only from the
+miner's official documentation (README, release notes, website), from the
+version where it is stated, and link the source in the commit message.
 
 The same manifest structure is used across all plugin packages (`os.dog-plugins-miners-base`, `os.dog-plugins-miners-extra`, etc.) — only `package` and `miners` content differ.
 
@@ -154,29 +195,40 @@ supported, adds new parameters and removes unsupported ones. BzMiner uses
 help and the active README table: 1.7.8's help omits the supported `pearlhash`.
 SRBMiner includes its CPU algorithms as well as GPU algorithms.
 
-XMRig 6.27.0 is built from the upstream [v6.27.0 source](https://github.com/xmrig/xmrig/archive/refs/tags/v6.27.0.tar.gz)
-(SHA-256 `4cf0895edae1e32042c8c0103c4a9d1fa3b3a0bf8a81ce7733ad6539514b48f0`)
-with `kDefaultDonateLevel` and `kMinimumDonateLevel` in `src/donate.h` set to
-zero. The build also uses [hwloc 2.12.1 source](https://download.open-mpi.org/release/hwloc/v2.12/hwloc-2.12.1.tar.gz)
-(SHA-256 `ffa02c3a308275a9339fbe92add054fac8e9a00cb8fe8c53340094012cb7c633`).
+XMRig 6.26.0 is built from source with default and minimum donation levels
+set to zero. Modified source is in `releases/xmrig-6.26.0-source.tar.gz`;
+see the rebuild instructions below.
 
 The new launchers accept the same slot profile as the existing miners.
 `addition` is split on whitespace into extra CLI arguments, without shell
 evaluation. Statistics describe the first algorithm; CPU work is included in
 totals but CPU threads are not reported as GPU devices.
 
-For every locally maintained miner launcher, `addition` may contain multiple
-lines: spaces, tabs and line breaks separate arguments. New launchers must
-preserve this behavior. In profile JSON, encode a line break as `\n`. For
-example, `"addition": "--flag-one\n--flag-two value"` passes three arguments.
-Shell quoting is not interpreted, so quotes do not combine words into one
-argument. NekoMiner is distributed as an upstream-maintained package and its
-launcher may behave differently.
-
 Install archives contain only the launcher, shared profile reader, stats adapter, binary,
-`files.md5` and redistribution license notices.
+`files.md5` and redistribution license notices. Build documentation and
+modified source are kept separately from the installed miner.
 
-The XMRig binary uses static libuv
+### Rebuilding XMRig
+
+The upstream tag is `v6.26.0`. The only code change is in `src/donate.h`:
+`kDefaultDonateLevel` and `kMinimumDonateLevel` are changed from 1 to 0.
+The launcher also sets `--donate-level 0 --donate-over-proxy 0`.
+
+The complete modified source, upstream GPL-3.0 license and hwloc dependency
+source are in `releases/xmrig-6.26.0-source.tar.gz`. The upstream source
+archive SHA-256 before modification is
+`bebb05cd95bc43e3d40b02abb98ea8680e68f2cb1c8bdaf442bde8f914c924ee`;
+the hwloc 2.12.1 archive SHA-256 is
+`ffa02c3a308275a9339fbe92add054fac8e9a00cb8fe8c53340094012cb7c633`.
+
+On Ubuntu 24.04 x86_64, from the repository root:
+
+```bash
+sudo apt-get install build-essential cmake libuv1-dev libssl-dev
+bash .github/scripts/build_xmrig.sh
+```
+
+The script rebuilds the binary and install archive. It uses static libuv
 1.48.0, OpenSSL 3.0.13 and hwloc 2.12.1 with CPU, TLS and HTTP API support.
 It does not use `-march=native`. Upstream disables OpenCL and CUDA for fully
 static Linux binaries; KawPow is disabled because it requires a GPU backend.
@@ -218,3 +270,22 @@ Both `miner` and `stats` receive a profile path as `$1`:
 | `coin` | Coin ticker |
 | `api_port` | Local API port for stats collection |
 | `extra` | Arbitrary extra data |
+
+### rgminer
+
+rgminer is registered as a regular miner, with 1.1.5 as the latest version.
+Algorithm mappings are `pearlhash` → `pearl`, `memhash` → `memhash` and
+`argon2id_exfer` → `exfer-argon2id`. The launcher reads `.algo` from the slot
+profile; no `--algo` in `.addition` is needed. Statistics report the global
+algorithm name. Device selection and other extra flags go in `.addition`.
+The comma-separated `.pool` value is passed through for native failover.
+
+The 1.1.5 install archive in `releases/` contains the binary, launcher, stats
+adapter and `files.md5`. Rebuild it with
+`python3 .github/scripts/package_rgminer.py` using the binary and adapters
+in `miners/rgminer/`.
+
+Local launchers use `common/profile.sh` for slot fields and whitespace-separated
+`addition` arguments, including line breaks. Each archive includes a standalone
+copy of this file. NekoMiner uses its upstream-maintained launcher. XMRig is
+built without donations; its scheduled workflow also supports manual dry runs.

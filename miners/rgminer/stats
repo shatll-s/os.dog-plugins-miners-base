@@ -1,0 +1,112 @@
+#!/bin/bash
+
+####################################################################################
+###
+### rgminer GPU stats
+### os.dog integration: @osdog
+###
+####################################################################################
+
+# os.dog stats output format:
+# {
+#   "miner": "rgminer",
+#   "algo": "pearlhash",
+#   "ver": "0.8.8",
+#   "online": 1711234567,
+#   "total_hr": "25345148",
+#   "total_share": "31",
+#   "total_badshare": "0",
+#   "hr": [3169026, 3168905, ...],
+#   "share": [6, 5, 2, ...],
+#   "badshare": [0, 0, 0, ...],
+#   "busid": {"0":"01","1":"02",...}
+# }
+#
+# Each card's bus is the API's own (.miners[].pciBusId, rgminer 1.1.x): the
+# order of nvidia-smi is not the miner's when a card is kept from it
+# (CUDA_VISIBLE_DEVICES), and the numbers would land on other cards. Only
+# without it, nvidia-smi's order.
+
+set -euo pipefail
+
+PROFILE="${1:-}"
+[[ -n "$PROFILE" && -f "$PROFILE" ]] || { echo "Usage: $0 <profile.json>"; exit 1; }
+API_PORT=$(jq -r '.api_port // empty' "$PROFILE")
+[[ "$API_PORT" =~ ^[0-9]+$ ]] || exit 1
+ALGO=$(jq -r '.algo // "pearl"' "$PROFILE")
+# Report the global algorithm name, even though the binary accepts "pearl".
+case "$ALGO" in
+    pearl) ALGO=pearlhash ;;
+    exfer-argon2id) ALGO=argon2id_exfer ;;
+esac
+miner="rgminer"
+ver=$(jq -r '.fork // "1.1.5"' "$PROFILE")
+API_TIMEOUT=3
+
+api_json=$(curl --fail --silent --noproxy '*' --connect-timeout 2 --max-time $API_TIMEOUT "http://127.0.0.1:$API_PORT/metrics" 2>/dev/null)
+[[ -z "$api_json" ]] && exit 1
+jq -e 'type == "object" and (.miners | type == "array")' <<< "$api_json" >/dev/null
+
+# Per-GPU arrays from .miners[]
+hr_json=$(echo "$api_json" | jq '[.miners[]?.emaRate // 0 | floor]')
+share_json=$(echo "$api_json" | jq '[.miners[]?.acceptedShares // 0]')
+badshare_json=$(echo "$api_json" | jq '[.miners[]?.rejectedShares // 0]')
+
+# Totals
+total_hr=$(echo "$api_json" | jq '[.miners[]?.emaRate // 0] | (add // 0) | floor')
+total_share=$(echo "$api_json" | jq '[.miners[]?.acceptedShares // 0] | add // 0')
+total_badshare=$(echo "$api_json" | jq '[.miners[]?.rejectedShares // 0] | add // 0')
+
+[[ -z "$hr_json" || "$hr_json" == "null" ]] && hr_json='[]'
+[[ -z "$share_json" || "$share_json" == "null" ]] && share_json='[]'
+[[ -z "$badshare_json" || "$badshare_json" == "null" ]] && badshare_json='[]'
+[[ -z "$total_hr" || "$total_hr" == "null" ]] && total_hr=0
+[[ -z "$total_share" || "$total_share" == "null" ]] && total_share=0
+[[ -z "$total_badshare" || "$total_badshare" == "null" ]] && total_badshare=0
+
+# Bus IDs: the API's, "0000:0E:00.0" -> "0e" (as rgminer's own h-stats.sh reads it)
+busid_json=$(echo "$api_json" | jq -c '[.miners[]? | (.pciBusId | if type == "string" then ascii_downcase else "" end
+        | (capture("^[0-9a-f]+:(?<bus>[0-9a-f]{2}):") | .bus) // "")] as $b
+    | if ($b | length) > 0 and all($b[]; length == 2) then
+        [range(0; $b | length) as $i | {key: ($i | tostring), value: $b[$i]}] | from_entries
+      else empty end' 2>/dev/null)
+[[ -z "$busid_json" ]] && busid_json='{}'
+if [[ "$busid_json" == '{}' ]] && command -v nvidia-smi >/dev/null 2>&1; then
+    mapfile -t bus_lines < <(nvidia-smi --query-gpu=pci.bus_id --format=csv,noheader 2>/dev/null)
+    for ((i=0; i<${#bus_lines[@]}; i++)); do
+        busid_raw=$(echo "${bus_lines[$i]}" | cut -d':' -f2 | tr '[:upper:]' '[:lower:]' | tr -d ' ')
+        [[ ${#busid_raw} -eq 1 ]] && busid_raw="0$busid_raw"
+        busid_json=$(jq -n --argjson data "$busid_json" --arg key "$i" --arg value "$busid_raw" \
+            '$data + { ($key): $value }')
+    done
+fi
+
+# Uptime from rgminer process etimes (works across rgminer's internal restarts)
+miner_online=""
+if command -v pgrep >/dev/null 2>&1; then
+    pid=$(pgrep -x rgminer | head -1 || true)
+    if [[ -n "$pid" ]]; then
+        etimes=$(ps -p "$pid" -o etimes= 2>/dev/null | tr -d ' ' || true)
+        if [[ "$etimes" =~ ^[0-9]+$ ]]; then
+            miner_online=$(( $(date +%s) - etimes ))
+        fi
+    fi
+fi
+
+# Build output JSON
+miner_json=$(jq -n \
+    --arg miner "$miner" \
+    --arg algo "$ALGO" \
+    --arg ver "$ver" \
+    --arg total_hr "$total_hr" \
+    --arg total_share "$total_share" \
+    --arg total_badshare "$total_badshare" \
+    --argjson hr "$hr_json" \
+    --argjson share "$share_json" \
+    --argjson badshare "$badshare_json" \
+    --argjson busid "$busid_json" \
+    '{$miner, $algo, $ver, $total_hr, $total_share, $total_badshare, $hr, $share, $badshare, $busid}')
+
+[[ -n "$miner_online" ]] && miner_json=$(jq ". + {\"online\": \"$miner_online\"}" <<< "$miner_json")
+
+echo "$miner_json" | jq -c '.'
