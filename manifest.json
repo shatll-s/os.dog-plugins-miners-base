@@ -6,7 +6,7 @@
     {
       "id": "bzminer",
       "name": "BzMiner",
-      "latest": "100.83",
+      "latest": "100.84",
       "algos": [
         { "g": "c29", "i": "c29" },
         { "g": "cn-heavy/0", "i": "cn-heavy/0" },
@@ -40,9 +40,13 @@
         { "g": "verushash", "i": "verus" },
         { "g": "janushash", "i": "warthog" },
         { "g": "xelishashv3", "i": "xelis" },
-        { "g": "bramring", "i": "bramring" }
+        { "g": "bramring", "i": "bramring" },
+        { "g": "bcbo", "i": "bcbo" },
+        { "g": "bitcoboost", "i": "bitcoboost" },
+        { "g": "x16rv2", "i": "x16rv2" }
       ],
       "versions": {
+        "100.84": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/bzminer-100.84.tar.gz",
         "100.83": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/bzminer-100.83.tar.gz",
         "100.82": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/bzminer-100.82.tar.gz",
         "100.81": "https://raw.githubusercontent.com/shatll-s/os.dog-plugins-miners-base/main/releases/bzminer-100.81.tar.gz",
@@ -92,6 +96,11 @@
         },
         "100.81": {
           "bramring": 0
+        },
+        "100.84": {
+          "bcbo": 1,
+          "bitcoboost": 1,
+          "x16rv2": 1
         }
       }
     },
